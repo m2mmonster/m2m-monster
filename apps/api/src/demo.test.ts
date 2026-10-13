@@ -154,6 +154,27 @@ describe("GET /demo (Devnet only)", () => {
     expect((await byPayee.app.request(URL_)).status).toBe(429);
   });
 
+  it("uses the scheme the proxy saw (X-Forwarded-Proto) only with TRUST_PROXY", async () => {
+    const urlOf = async (a: typeof app, headers: Record<string, string>) => {
+      const res = await a.request("http://sandbox.m2m.monster/demo", { headers });
+      return decodeHeader<PaymentRequired>(res.headers.get("PAYMENT-REQUIRED") ?? "").resource.url;
+    };
+    const proxied = (await testApp({ now: Date.now, trustProxy: true })).app;
+    expect(await urlOf(proxied, { "x-forwarded-proto": "https" })).toBe(
+      "https://sandbox.m2m.monster/demo",
+    );
+    expect(await urlOf(proxied, { "x-forwarded-proto": "http, https" })).toBe(
+      "https://sandbox.m2m.monster/demo",
+    );
+    expect(await urlOf(proxied, { "x-forwarded-proto": "gopher" })).toBe(
+      "http://sandbox.m2m.monster/demo",
+    );
+    // Without TRUST_PROXY the header is ignored.
+    expect(await urlOf(app, { "x-forwarded-proto": "https" })).toBe(
+      "http://sandbox.m2m.monster/demo",
+    );
+  });
+
   it("does not exist outside Devnet", async () => {
     const mainnet = await testApp({ network: MAINNET, treasury: "unused" });
     expect((await mainnet.app.request(URL_)).status).toBe(404);

@@ -134,6 +134,13 @@ describe("discoverability files (section B)", () => {
     expect((discovery.links as Record<string, string>).demo).toBe("https://m2m.monster/demo");
   });
 
+  it("never generates http:// URLs (PUBLIC_BASE_URL is https)", async () => {
+    for (const path of ALL) {
+      const text = await (await get(path)).text();
+      expect(text, path).not.toContain("http://");
+    }
+  });
+
   it("never links to buying USDT or promotes it (rule 6)", async () => {
     for (const path of ALL) {
       const text = await (await get(path)).text();

@@ -5,7 +5,7 @@
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { DEVNET, NETWORKS } from "@m2m-monster/core";
 import { createApiClient, createPaywall } from "@m2m-monster/sdk";
-import { type AppDeps, inProcessFetch } from "./app.js";
+import { type AppDeps, externalRequest, inProcessFetch } from "./app.js";
 
 export const DEMO_PAYEE = "9ENSDxrnoiXiut9pVzh1f6P3aYqjcoD7pRFE7foVCFqJ";
 
@@ -27,7 +27,7 @@ export function registerDemoRoutes(app: OpenAPIHono, deps: AppDeps) {
       now: deps.now,
     });
     return paywall.handle(
-      c.req.raw,
+      externalRequest(c, deps.trustProxy),
       DEMO_PRICE,
       {
         description: "m2m.monster Devnet demo resource (0.01 Devnet USDC)",

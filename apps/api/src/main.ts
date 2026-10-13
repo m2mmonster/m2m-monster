@@ -44,6 +44,7 @@ const app = createApp({
   publicBaseUrl: config.publicBaseUrl,
   clientIp,
   limits: config.limits,
+  trustProxy: config.trustProxy,
   log: (line) => console.log(line),
 });
 

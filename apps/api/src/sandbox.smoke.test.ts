@@ -24,7 +24,8 @@ describe(`deployed sandbox ${base}`, () => {
     expect(status).toMatchObject({ status: "ok", api_version: "v1", network: DEVNET });
     const discovery = (await (await get("/discovery")).json()) as { links: Record<string, string> };
     for (const url of Object.values(discovery.links)) {
-      if (url.endsWith("/v1") || url.endsWith("/mcp")) continue;
+      // /v1 is a prefix, /mcp needs POST and /demo answers 402 (checked below).
+      if (url.endsWith("/v1") || url.endsWith("/mcp") || url.endsWith("/demo")) continue;
       expect((await fetch(url)).status, url).toBe(200);
     }
   });
@@ -62,10 +63,13 @@ describe(`deployed sandbox ${base}`, () => {
       amount: "10000",
       extra: { fee_net: "1000", payee_amount: "9000" },
     });
-    const ttl = (accepted?.extra?.expires_at as number) - Math.floor(Date.now() / 1000);
-    expect(ttl).toBeGreaterThan(20);
+    // Measured against the server's own clock (Date header), not this machine's.
+    const serverNow = Math.floor(Date.parse(res.headers.get("date") ?? "") / 1000);
+    const ttl = (accepted?.extra?.expires_at as number) - serverNow;
+    expect(ttl).toBeGreaterThanOrEqual(29);
     expect(ttl).toBeLessThanOrEqual(31);
     expect(required.extensions?.["m2m-referral"]?.info.link).toContain(`ref=${accepted?.payTo}`);
+    expect(required.resource.url).toBe(`${base}/demo`);
   });
 
   it("answers MCP tools/list", async () => {

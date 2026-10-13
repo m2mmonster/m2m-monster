@@ -40,6 +40,8 @@ export interface AppDeps {
   publicBaseUrl: string;
   clientIp: (c: Context) => string;
   limits: { ip: number; pubkey: number; apiKey: number };
+  /** Behind one reverse proxy: trust the last X-Forwarded-For / X-Forwarded-Proto hop. */
+  trustProxy?: boolean;
   /** Receives one JSON line per request: method, path, status, duration (D44). */
   log?: (line: string) => void;
 }
@@ -59,6 +61,21 @@ export function inProcessFetch(app: { fetch: OpenAPIHono["fetch"] }, c: Context)
     if (forwarded) request.headers.set("x-forwarded-for", forwarded);
     return Promise.resolve(app.fetch(request, c.env));
   };
+}
+
+/**
+ * The incoming request as the client saw it: with `trustProxy`, the scheme comes from the last
+ * X-Forwarded-Proto hop (http or https only), so URLs built from it are not downgraded to http.
+ */
+export function externalRequest(c: Context, trustProxy: boolean | undefined): Request {
+  const proto = trustProxy
+    ? c.req.header("x-forwarded-proto")?.split(",").at(-1)?.trim().toLowerCase()
+    : undefined;
+  if (proto !== "http" && proto !== "https") return c.req.raw;
+  const url = new URL(c.req.url);
+  if (url.protocol === `${proto}:`) return c.req.raw;
+  url.protocol = `${proto}:`;
+  return new Request(url, c.req.raw);
 }
 
 export interface Helpers {
