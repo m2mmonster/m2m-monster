@@ -15,6 +15,7 @@ import type { Context } from "hono";
 import { authenticatedAgent, registerAgentRoutes, withDiscounts } from "./agents.js";
 import { registerBuildRoutes } from "./builds.js";
 import type { Db } from "./db.js";
+import { registerDemoRoutes } from "./demo.js";
 import { errorBody, errorResponse } from "./errors.js";
 import type { Kv } from "./kv.js";
 import { registerPaymentRoutes } from "./payments.js";
@@ -171,6 +172,7 @@ export function createApp(deps: AppDeps) {
   registerAgentRoutes(app, deps);
   registerBuildRoutes(app, deps);
   registerPublicRoutes(app, deps);
+  registerDemoRoutes(app, deps);
 
   // MCP over streamable HTTP (section L, D20). Its API calls stay in process and keep the
   // caller's connection, so rate limits see the real client.

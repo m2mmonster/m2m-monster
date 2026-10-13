@@ -53,6 +53,7 @@ import {
 } from "@solana-program/token";
 import { beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
+import { DEMO_PAYEE } from "./demo.js";
 import { memoryKv } from "./kv.js";
 import { testDb } from "./test-db.js";
 
@@ -76,6 +77,7 @@ let payee: KeyPairSigner;
 let testMint: KeyPairSigner;
 let api: ReturnType<typeof createApiClient>;
 let serviceAddress: string;
+let app: ReturnType<typeof createApp>;
 
 async function send(instructions: Instruction[]) {
   const { value: lifetime } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
@@ -183,7 +185,7 @@ beforeAll(async () => {
 
   const serviceKeys = await createKeyPairFromBytes(secret("SERVICE_KEY"));
   serviceAddress = await getAddressFromPublicKey(serviceKeys.publicKey);
-  const app = createApp({
+  app = createApp({
     network: DEVNET,
     treasury: TREASURY,
     serviceKeys,
@@ -349,6 +351,25 @@ describe("m2m-split on Devnet (sections G, K)", () => {
     expect(after.payer - before.payer).toBe(99_000n);
     expect(before.payee - after.payee).toBe(99_000n);
     expect(after.treasury).toBe(before.treasury);
+  });
+
+  it("pays the Devnet demo resource: GET /demo -> 402 -> pay -> 200 (D48)", async () => {
+    const demoBefore = (await tokenBalance(rpc, DEMO_PAYEE as Address, USDC)) ?? 0n;
+    const treasuryBefore = (await tokenBalance(rpc, TREASURY, USDC)) ?? 0n;
+    const pay = createPaymentFetch({
+      rpc,
+      signer: payer,
+      serviceAddress,
+      fetch: (request) => Promise.resolve(app.fetch(request)),
+    });
+    const res = await pay("https://sandbox.m2m.monster/demo");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ demo: true, network: DEVNET });
+    expect(settlementOf(res)).toMatchObject({ success: true, payer: payer.address });
+    expect(((await tokenBalance(rpc, DEMO_PAYEE as Address, USDC)) ?? 0n) - demoBefore).toBe(
+      9_000n,
+    );
+    expect(((await tokenBalance(rpc, TREASURY, USDC)) ?? 0n) - treasuryBefore).toBe(1_000n);
   });
 
   it("refuses to pay without USDC for the fee (FEE_BALANCE_INSUFFICIENT_USDC)", async () => {

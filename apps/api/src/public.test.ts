@@ -126,6 +126,14 @@ describe("discoverability files (section B)", () => {
     expect(text).toContain(NETWORKS[DEVNET].usdc);
   });
 
+  it("points to the Devnet demo resource", async () => {
+    const text = await (await get("/llms.txt")).text();
+    expect(text).toContain("## Try it on Devnet");
+    expect(text).toContain("https://m2m.monster/demo");
+    const discovery = await getJson("/discovery");
+    expect((discovery.links as Record<string, string>).demo).toBe("https://m2m.monster/demo");
+  });
+
   it("never links to buying USDT or promotes it (rule 6)", async () => {
     for (const path of ALL) {
       const text = await (await get(path)).text();

@@ -11,7 +11,8 @@ export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
 export const MIGRATIONS = fileURLToPath(new URL("../drizzle", import.meta.url));
 
 export async function connectPostgres(url: string): Promise<Db> {
-  const db = drizzle(postgres(url, { max: 10 }), { schema });
+  // Postgres NOTICEs (e.g. "already exists, skipping" from applied migrations) are not logged.
+  const db = drizzle(postgres(url, { max: 10, onnotice: () => {} }), { schema });
   await migrate(db, { migrationsFolder: MIGRATIONS });
   return db;
 }

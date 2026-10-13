@@ -4,6 +4,7 @@
 
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import {
+  DEVNET,
   ERRORS,
   M2M_SPLIT,
   NETWORKS,
@@ -261,7 +262,20 @@ return paywall.handle(request, { mint: "${usdc}", amount: "100000" }, { descript
 
 The payee's token account and the treasury USDC account must exist before paying; payments never create accounts.
 
-## Quote with curl
+${
+  network === DEVNET
+    ? `## Try it on Devnet
+
+\`GET ${base}/demo\` answers 402 with an m2m-split quote for 0.01 Devnet USDC (fee 0.001 USDC). Pay it with Devnet funds:
+
+\`\`\`ts
+const res = await pay("${base}/demo"); // createPaymentFetch from above, Devnet RPC and keys
+console.log(res.status, await res.json()); // 200 and the receipt in PAYMENT-RESPONSE
+\`\`\`
+
+`
+    : ""
+}## Quote with curl
 
 \`\`\`sh
 curl -X POST ${base}/v1/quotes \\
@@ -308,7 +322,7 @@ export function registerPublicRoutes(app: OpenAPIHono, deps: AppDeps) {
       name: "m2m.monster",
       description: DESCRIPTION,
       network: deps.network,
-      links: urls(base),
+      links: { ...urls(base), ...(deps.network === DEVNET && { demo: `${base}/demo` }) },
     }),
   );
   app.get("/icon.svg", (c) =>

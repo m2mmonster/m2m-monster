@@ -1,5 +1,12 @@
 // Smoke test against a deployed sandbox: SANDBOX_URL=https://... pnpm test:smoke
-import { DEVNET, NETWORKS, type SignedQuote, verifyQuote } from "@m2m-monster/core";
+import {
+  DEVNET,
+  decodeHeader,
+  NETWORKS,
+  type PaymentRequired,
+  type SignedQuote,
+  verifyQuote,
+} from "@m2m-monster/core";
 import { describe, expect, it } from "vitest";
 
 const base = process.env.SANDBOX_URL?.replace(/\/$/, "");
@@ -41,6 +48,24 @@ describe(`deployed sandbox ${base}`, () => {
     expect(quote).toMatchObject({ fee_gross: "25000", fee_net: "25000", payee_amount: "9975000" });
     const { address } = (await (await get("/v1/service-key")).json()) as { address: string };
     expect(await verifyQuote(quote, address)).toBe(true);
+  });
+
+  it("serves the Devnet demo 402 with m2m-split and a 30-second quote", async () => {
+    const res = await fetch(`${base}/demo`);
+    expect(res.status).toBe(402);
+    const required = decodeHeader<PaymentRequired>(res.headers.get("PAYMENT-REQUIRED") ?? "");
+    const [accepted] = required.accepts;
+    expect(accepted).toMatchObject({
+      scheme: "m2m-split",
+      network: DEVNET,
+      asset: NETWORKS[DEVNET].usdc,
+      amount: "10000",
+      extra: { fee_net: "1000", payee_amount: "9000" },
+    });
+    const ttl = (accepted?.extra?.expires_at as number) - Math.floor(Date.now() / 1000);
+    expect(ttl).toBeGreaterThan(20);
+    expect(ttl).toBeLessThanOrEqual(31);
+    expect(required.extensions?.["m2m-referral"]?.info.link).toContain(`ref=${accepted?.payTo}`);
   });
 
   it("answers MCP tools/list", async () => {
