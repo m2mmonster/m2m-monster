@@ -77,6 +77,11 @@ describe("GET /demo (Devnet only)", () => {
       `https://m2m.monster/.well-known/mcp.json?ref=${DEMO_PAYEE}`,
     );
     expect(body.extensions?.["payment-identifier"]?.info).toEqual({ required: true });
+    // Devnet only: no mainnet network, no mainnet mints, no USDT.
+    const text = JSON.stringify(body);
+    expect(text).not.toContain(MAINNET);
+    for (const { mint } of NETWORKS[MAINNET].mints) expect(text).not.toContain(mint);
+    expect(text).not.toMatch(/usdt/i);
   });
 
   it("serves the resource once paid, through the relay, with a receipt", async () => {
@@ -128,6 +133,25 @@ describe("GET /demo (Devnet only)", () => {
       errorReason: "PAYMENT_TRANSACTION_INVALID",
     });
     expect(state.sent).toHaveLength(0);
+  });
+
+  it("rate-limits per client IP behind a proxy and per payee pubkey (RATE_LIMITED)", async () => {
+    const proxied = await testApp({
+      now: Date.now,
+      // Like main.ts with TRUST_PROXY: the client IP is the last X-Forwarded-For hop.
+      clientIp: (c) => c.req.header("x-forwarded-for")?.split(",").at(-1)?.trim() ?? "proxy",
+      limits: { ip: 1, pubkey: 1000, apiKey: 1000 },
+    });
+    const from = (ip: string) => proxied.app.request(URL_, { headers: { "x-forwarded-for": ip } });
+    expect((await from("198.51.100.1")).status).toBe(402);
+    const second = await from("198.51.100.1");
+    expect(second.status).toBe(429);
+    expect(await second.json()).toMatchObject({ error: { code: "RATE_LIMITED" } });
+    expect((await from("198.51.100.2")).status).toBe(402);
+
+    const byPayee = await testApp({ now: Date.now, limits: { ip: 1000, pubkey: 1, apiKey: 1000 } });
+    expect((await byPayee.app.request(URL_)).status).toBe(402);
+    expect((await byPayee.app.request(URL_)).status).toBe(429);
   });
 
   it("does not exist outside Devnet", async () => {

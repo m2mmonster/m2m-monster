@@ -49,6 +49,18 @@ const IDEMPOTENCY_TTL = 24 * 60 * MINUTE;
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 
+/**
+ * fetch for in-process API calls made on behalf of an incoming request (/mcp, /demo): keeps the
+ * caller's connection and its X-Forwarded-For, so per-IP rate limits see the real client.
+ */
+export function inProcessFetch(app: { fetch: OpenAPIHono["fetch"] }, c: Context) {
+  return (request: Request) => {
+    const forwarded = c.req.header("x-forwarded-for");
+    if (forwarded) request.headers.set("x-forwarded-for", forwarded);
+    return Promise.resolve(app.fetch(request, c.env));
+  };
+}
+
 export interface Helpers {
   sha256: (value: string) => string;
   /** Fixed one-minute window per key (section K, D17). */
@@ -179,7 +191,7 @@ export function createApp(deps: AppDeps) {
   app.all("/mcp", (c) =>
     mcpHttpHandler((apiKey) =>
       createApiClient(deps.publicBaseUrl, {
-        fetch: (request) => Promise.resolve(app.fetch(request, c.env)),
+        fetch: inProcessFetch(app, c),
         ...(apiKey && { apiKey }),
       }),
     )(c.req.raw),

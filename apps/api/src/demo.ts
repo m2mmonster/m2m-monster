@@ -5,7 +5,7 @@
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { DEVNET, NETWORKS } from "@m2m-monster/core";
 import { createApiClient, createPaywall } from "@m2m-monster/sdk";
-import type { AppDeps } from "./app.js";
+import { type AppDeps, inProcessFetch } from "./app.js";
 
 export const DEMO_PAYEE = "9ENSDxrnoiXiut9pVzh1f6P3aYqjcoD7pRFE7foVCFqJ";
 
@@ -19,7 +19,7 @@ export function registerDemoRoutes(app: OpenAPIHono, deps: AppDeps) {
     const paywall = createPaywall({
       // In process, keeping the caller's connection for rate limits (like /mcp).
       api: createApiClient(deps.publicBaseUrl, {
-        fetch: (request) => Promise.resolve(app.fetch(request, c.env)),
+        fetch: inProcessFetch(app, c),
       }),
       rpc: deps.rpc,
       network: DEVNET,
