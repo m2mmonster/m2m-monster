@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+  - apps/*
+
+# Dependencies may not run install scripts unless listed as true.
+allowBuilds:
+  esbuild: false

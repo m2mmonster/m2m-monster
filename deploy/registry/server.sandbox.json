@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "monster.m2m/m2m-monster",
+  "title": "m2m.monster (Devnet sandbox)",
+  "description": "Non-custodial x402 payments between AI agents on Solana. Returns unsigned transactions.",
+  "version": "1.0.0",
+  "websiteUrl": "https://sandbox.m2m.monster",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://sandbox.m2m.monster/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Optional. Bearer <api_key> from register_agent; unlocks referral status.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

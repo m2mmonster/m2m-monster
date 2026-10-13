@@ -1,0 +1,25 @@
+{
+  "description": "Signed quote (decision D7). The service key is the 32-byte private key filled with service_seed. `message` is the canonical form: JSON with keys sorted and no whitespace. `signature` is the base58 ed25519 signature of its UTF-8 bytes.",
+  "service_seed": 9,
+  "service_address": "J2xccRtuG43drESLYznHhLhQkLTdfepcKYbiQ9BsJVaf",
+  "quote": {
+    "id": "q_test_0001",
+    "nonce": "00112233445566778899aabbccddeeff",
+    "network": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+    "mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+    "decimals": 6,
+    "amount": "10000000",
+    "payee": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu",
+    "payee_amount": "9975000",
+    "treasury": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse",
+    "usdc_mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+    "usdc_decimals": 6,
+    "fee_gross": "25000",
+    "discount": "0",
+    "fee_net": "25000",
+    "expires_at": 1791460800,
+    "referral": "https://m2m.monster/.well-known/mcp.json?ref=9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+  },
+  "message": "{\"amount\":\"10000000\",\"decimals\":6,\"discount\":\"0\",\"expires_at\":1791460800,\"fee_gross\":\"25000\",\"fee_net\":\"25000\",\"id\":\"q_test_0001\",\"mint\":\"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU\",\"network\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1\",\"nonce\":\"00112233445566778899aabbccddeeff\",\"payee\":\"9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu\",\"payee_amount\":\"9975000\",\"referral\":\"https://m2m.monster/.well-known/mcp.json?ref=9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu\",\"treasury\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"usdc_decimals\":6,\"usdc_mint\":\"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU\"}",
+  "signature": "5kxqaG1vqpEkQxpeBdk7Nc32n2HpHmvaT7wkUTfPNaUiTXUBFr7Ch6k2gu3vy3ZwJrJvJuaAH61P3F9GmNBAixpi"
+}

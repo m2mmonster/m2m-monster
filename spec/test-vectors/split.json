@@ -1,0 +1,158 @@
+{
+  "description": "m2m-split layout (section G). Keys are 32-byte private keys filled with the seed byte: payer 1, payee 2, treasury 3. Amounts are strings of base units. Transactions are base64 wire bytes. Invalid cases verify `transaction` against the first valid case's params with `expectation_change` applied.",
+  "seeds": {
+    "payer": 1,
+    "payee": 2,
+    "treasury": 3
+  },
+  "valid": [
+    {
+      "name": "$10 in USDC, no discount",
+      "params": {
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payer": "AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9",
+        "payee": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu",
+        "treasury": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse",
+        "paymentMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "paymentDecimals": 6,
+        "usdcDecimals": 6,
+        "payeeAmount": "9975000",
+        "feeNet": "25000",
+        "receiptId": "q_test_0001",
+        "computeUnitLimit": 20000,
+        "computeUnitPrice": "1000",
+        "lifetime": {
+          "blockhash": "EZ3rST5dvHmbanh75jc4PuLfV96vp9fEYBVeNk4FfM1k",
+          "lastValidBlockHeight": "291470237"
+        }
+      },
+      "unsigned": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQPoAwAAAAAAAAcEAQUCAAoM2DSYAAAAAAAGBwQBBQMACgyoYQAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA=",
+      "signed": "AYZ0/gVAwmD1lkOHk/eqawvEotgLAPka9QecprL6HC485HTZEErmNI/eBrO4+eJUjgKlcP98tDDQI1ndUyzRlwOAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQPoAwAAAAAAAAcEAQUCAAoM2DSYAAAAAAAGBwQBBQMACgyoYQAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA="
+    },
+    {
+      "name": "$10 in USDT, fee in USDC",
+      "params": {
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payer": "AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9",
+        "payee": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu",
+        "treasury": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse",
+        "paymentMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "paymentDecimals": 6,
+        "usdcDecimals": 6,
+        "payeeAmount": "9975000",
+        "feeNet": "25000",
+        "receiptId": "q_test_0001",
+        "computeUnitLimit": 20000,
+        "computeUnitPrice": "1000",
+        "lifetime": {
+          "blockhash": "EZ3rST5dvHmbanh75jc4PuLfV96vp9fEYBVeNk4FfM1k",
+          "lastValidBlockHeight": "291470237"
+        }
+      },
+      "unsigned": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAFCoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52wJP51IrjlhVmqNyM1mBGqHrDAOr5MoCJGdMF5FVoYYi7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgvlpqrNtgLgAhyTuel6hbflWPma0UXFiEsqKzqqQVN/sDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAMb6evO+2606PWXzaqvJdDGxu+TC0vbg5HymAgNFL11hzgEOYK/tsicXvWMZL1QUWj+WWjO7gtLHAp6yzh4ggmQFSlNamSkhBk0k6HFg2jh8fDW13bySu4HkH6hAQQVEjQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpyV29u5s5tb9yxXaxLxIjPB/vcv+BhIj3ODTS8YLYlusFBQAFAiBOAAAFAAkD6AMAAAAAAAAJBAQHAgAKDNg0mAAAAAAABgkEAQYDAAoMqGEAAAAAAAAGCAAjc2V0dGxlZCB2aWEgbTJtLm1vbnN0ZXIgcV90ZXN0XzAwMDEA",
+      "signed": "ASRvjUbp9qwb78KXoPVY0iLBibtbVBHdS73wJijexXMSMbpNG8q/accqnvQJNcePrD4tKMBnSEUVr1ux2vTsTwyAAQAFCoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52wJP51IrjlhVmqNyM1mBGqHrDAOr5MoCJGdMF5FVoYYi7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgvlpqrNtgLgAhyTuel6hbflWPma0UXFiEsqKzqqQVN/sDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAMb6evO+2606PWXzaqvJdDGxu+TC0vbg5HymAgNFL11hzgEOYK/tsicXvWMZL1QUWj+WWjO7gtLHAp6yzh4ggmQFSlNamSkhBk0k6HFg2jh8fDW13bySu4HkH6hAQQVEjQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpyV29u5s5tb9yxXaxLxIjPB/vcv+BhIj3ODTS8YLYlusFBQAFAiBOAAAFAAkD6AMAAAAAAAAJBAQHAgAKDNg0mAAAAAAABgkEAQYDAAoMqGEAAAAAAAAGCAAjc2V0dGxlZCB2aWEgbTJtLm1vbnN0ZXIgcV90ZXN0XzAwMDEA"
+    },
+    {
+      "name": "$10 in USDC, referred discount",
+      "params": {
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payer": "AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9",
+        "payee": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu",
+        "treasury": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse",
+        "paymentMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "paymentDecimals": 6,
+        "usdcDecimals": 6,
+        "payeeAmount": "9981250",
+        "feeNet": "18750",
+        "receiptId": "q_test_0001",
+        "computeUnitLimit": 20000,
+        "computeUnitPrice": "1000",
+        "lifetime": {
+          "blockhash": "EZ3rST5dvHmbanh75jc4PuLfV96vp9fEYBVeNk4FfM1k",
+          "lastValidBlockHeight": "291470237"
+        }
+      },
+      "unsigned": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQPoAwAAAAAAAAcEAQUCAAoMQk2YAAAAAAAGBwQBBQMACgw+SQAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA=",
+      "signed": "AaM5Nj6Dj2AX4FfzuczqPSAj8CwoASs91QGl7gtfzFRDPNnl6pBJzgfR85cn+5iL9IYaCCq22uCVpURSTK9jmQKAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQPoAwAAAAAAAAcEAQUCAAoMQk2YAAAAAAAGBwQBBQMACgw+SQAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA="
+    },
+    {
+      "name": "$0.001 minimum payment",
+      "params": {
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payer": "AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9",
+        "payee": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu",
+        "treasury": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse",
+        "paymentMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "paymentDecimals": 6,
+        "usdcDecimals": 6,
+        "payeeAmount": "0",
+        "feeNet": "1000",
+        "receiptId": "q_test_0001",
+        "computeUnitLimit": 20000,
+        "computeUnitPrice": "0",
+        "lifetime": {
+          "blockhash": "EZ3rST5dvHmbanh75jc4PuLfV96vp9fEYBVeNk4FfM1k",
+          "lastValidBlockHeight": "291470237"
+        }
+      },
+      "unsigned": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQMAAAAAAAAAAAcEAQUCAAoMAAAAAAAAAAAGBwQBBQMACgzoAwAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA=",
+      "signed": "AbIu2VKwizQUytW/6+cCehep0lDXUmU42fFbTPFd9ow9njji4QCDSsz3iceoK+7kyPOvbvHgIaeCrqCssldoRw+AAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQMAAAAAAAAAAAcEAQUCAAoMAAAAAAAAAAAGBwQBBQMACgzoAwAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA="
+    }
+  ],
+  "invalid": [
+    {
+      "name": "net amount to the payee",
+      "transaction": "AYZ0/gVAwmD1lkOHk/eqawvEotgLAPka9QecprL6HC485HTZEErmNI/eBrO4+eJUjgKlcP98tDDQI1ndUyzRlwOAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQPoAwAAAAAAAAcEAQUCAAoM2DSYAAAAAAAGBwQBBQMACgyoYQAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA=",
+      "expectation_change": {
+        "payeeAmount": "9975001"
+      },
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 2: amount does not match the quote"
+    },
+    {
+      "name": "fee to the treasury",
+      "transaction": "AYZ0/gVAwmD1lkOHk/eqawvEotgLAPka9QecprL6HC485HTZEErmNI/eBrO4+eJUjgKlcP98tDDQI1ndUyzRlwOAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQPoAwAAAAAAAAcEAQUCAAoM2DSYAAAAAAAGBwQBBQMACgyoYQAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA=",
+      "expectation_change": {
+        "feeNet": "24999"
+      },
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 3: amount does not match the quote"
+    },
+    {
+      "name": "payee",
+      "transaction": "AYZ0/gVAwmD1lkOHk/eqawvEotgLAPka9QecprL6HC485HTZEErmNI/eBrO4+eJUjgKlcP98tDDQI1ndUyzRlwOAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQPoAwAAAAAAAAcEAQUCAAoM2DSYAAAAAAAGBwQBBQMACgyoYQAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA=",
+      "expectation_change": {
+        "payee": "11111111111111111111111111111111"
+      },
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 2: destination does not match the quote"
+    },
+    {
+      "name": "treasury",
+      "transaction": "AYZ0/gVAwmD1lkOHk/eqawvEotgLAPka9QecprL6HC485HTZEErmNI/eBrO4+eJUjgKlcP98tDDQI1ndUyzRlwOAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQPoAwAAAAAAAAcEAQUCAAoM2DSYAAAAAAAGBwQBBQMACgyoYQAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA=",
+      "expectation_change": {
+        "treasury": "11111111111111111111111111111111"
+      },
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 3: destination does not match the quote"
+    },
+    {
+      "name": "payment mint",
+      "transaction": "AYZ0/gVAwmD1lkOHk/eqawvEotgLAPka9QecprL6HC485HTZEErmNI/eBrO4+eJUjgKlcP98tDDQI1ndUyzRlwOAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQPoAwAAAAAAAAcEAQUCAAoM2DSYAAAAAAAGBwQBBQMACgyoYQAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA=",
+      "expectation_change": {
+        "paymentMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+      },
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 2: mint does not match the quote"
+    },
+    {
+      "name": "receipt id",
+      "transaction": "AYZ0/gVAwmD1lkOHk/eqawvEotgLAPka9QecprL6HC485HTZEErmNI/eBrO4+eJUjgKlcP98tDDQI1ndUyzRlwOAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cK8kCOGhpAsJh82TGFPHsq0/z4F9YGhwIBT/HU9NN52yMROnTi0H5KqQzBEA7ECRFt9yPict9kQwtNUtP/np+E7e7hPX+M94VpB5bCOvSGlrx+G5G9lNFPocPMEelHtDgAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUEAAUCIE4AAAQACQPoAwAAAAAAAAcEAQUCAAoM2DSYAAAAAAAGBwQBBQMACgyoYQAAAAAAAAYGACNzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX3Rlc3RfMDAwMQA=",
+      "expectation_change": {
+        "receiptId": "q_other"
+      },
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 4: memo does not match the quote"
+    }
+  ]
+}

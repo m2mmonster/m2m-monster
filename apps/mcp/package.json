@@ -1,0 +1,49 @@
+{
+  "name": "@m2m-monster/mcp",
+  "version": "0.1.0",
+  "description": "m2m.monster MCP server (stdio): quote, build unsigned, verify and submit agent-to-agent payments over x402 on Solana.",
+  "license": "Apache-2.0",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "solana",
+    "x402",
+    "payments",
+    "agents"
+  ],
+  "homepage": "https://sandbox.m2m.monster/llms.txt",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m2mmonster/m2m-monster.git",
+    "directory": "apps/mcp"
+  },
+  "type": "module",
+  "bin": {
+    "m2m-monster-mcp": "./dist/stdio.js"
+  },
+  "exports": {
+    ".": {
+      "m2m-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@m2m-monster/core": "workspace:*",
+    "@m2m-monster/sdk": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "zod": "^4.6.5"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "name": "@m2m-monster/core",
+  "version": "0.1.0",
+  "description": "Core of m2m.monster: fees, quotes, and m2m-split transaction building and verification for x402 on Solana.",
+  "license": "Apache-2.0",
+  "keywords": [
+    "solana",
+    "x402",
+    "payments",
+    "agents",
+    "m2m-split"
+  ],
+  "homepage": "https://sandbox.m2m.monster/llms.txt",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m2mmonster/m2m-monster.git",
+    "directory": "packages/core"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "m2m-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "m2m-source": "./src/test-rpc.ts",
+      "types": "./dist/test-rpc.d.ts",
+      "default": "./dist/test-rpc.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@solana-program/compute-budget": "^0.19.0",
+    "@solana-program/memo": "^0.15.0",
+    "@solana-program/token": "^0.17.0",
+    "@solana/kit": "^8.4.0"
+  }
+}

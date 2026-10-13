@@ -1,0 +1,40 @@
+{
+  "name": "@m2m-monster/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch --conditions=m2m-source --env-file=../../.env src/main.ts",
+    "start": "node dist/main.js",
+    "openapi": "node dist/openapi.js",
+    "db:generate": "drizzle-kit generate",
+    "keygen": "node dist/keygen.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.3",
+    "@hono/zod-openapi": "1.6.3",
+    "@m2m-monster/core": "workspace:*",
+    "@m2m-monster/mcp": "workspace:*",
+    "@m2m-monster/sdk": "workspace:*",
+    "@solana-program/token": "0.17.0",
+    "@solana/kit": "8.4.0",
+    "drizzle-orm": "0.45.3",
+    "hono": "4.13.13",
+    "ioredis": "6.0.0",
+    "postgres": "3.4.9",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@solana-program/system": "0.15.0",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15"
+  },
+  "files": [
+    "dist",
+    "drizzle"
+  ],
+  "license": "Apache-2.0"
+}

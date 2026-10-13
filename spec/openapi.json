@@ -1,0 +1,1586 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "m2m.monster API",
+    "version": "1.0.0",
+    "description": "Non-custodial settlement for agent-to-agent payments over x402 with the m2m-split scheme on Solana. Every endpoint that moves funds returns unsigned transactions; agents sign locally."
+  },
+  "servers": [
+    {
+      "url": "https://m2m.monster"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Quote id; also the receipt id in the memo"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "mint": {
+            "type": "string",
+            "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+          },
+          "decimals": {
+            "type": "integer"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$",
+            "example": "10000000"
+          },
+          "payee": {
+            "type": "string",
+            "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+          },
+          "payee_amount": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$",
+            "example": "10000000",
+            "description": "amount − fee_net, in base units of mint"
+          },
+          "treasury": {
+            "type": "string",
+            "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+          },
+          "usdc_mint": {
+            "type": "string",
+            "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+          },
+          "usdc_decimals": {
+            "type": "integer"
+          },
+          "fee_gross": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$",
+            "example": "10000000"
+          },
+          "discount": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$",
+            "example": "10000000"
+          },
+          "fee_net": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$",
+            "example": "10000000",
+            "description": "Fee paid to the treasury, in USDC base units"
+          },
+          "expires_at": {
+            "type": "integer",
+            "description": "Unix seconds; quotes last 30 seconds"
+          },
+          "referral": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Base58 ed25519 signature by the service key"
+          }
+        },
+        "required": [
+          "id",
+          "nonce",
+          "network",
+          "mint",
+          "decimals",
+          "amount",
+          "payee",
+          "payee_amount",
+          "treasury",
+          "usdc_mint",
+          "usdc_decimals",
+          "fee_gross",
+          "discount",
+          "fee_net",
+          "expires_at",
+          "referral",
+          "signature"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "INVALID_REQUEST",
+                  "PAYMENT_BELOW_MINIMUM",
+                  "RECEIVER_TOKEN_ACCOUNT_MISSING",
+                  "SIMULATION_FAILED",
+                  "QUOTE_EXPIRED",
+                  "QUOTE_INVALID",
+                  "RATE_LIMITED",
+                  "MINT_NOT_ALLOWED",
+                  "FEE_BALANCE_INSUFFICIENT_USDC",
+                  "PAYMENT_TRANSACTION_INVALID",
+                  "TRANSACTION_FAILED",
+                  "RECEIPT_INVALID",
+                  "NOT_FOUND",
+                  "UNAUTHORIZED",
+                  "CHALLENGE_INVALID",
+                  "IDEMPOTENCY_KEY_REUSED",
+                  "INTERNAL_ERROR"
+                ]
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "QuoteRequest": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "example": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1"
+          },
+          "mint": {
+            "type": "string",
+            "example": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$",
+            "example": "10000000",
+            "description": "Gross amount the payer pays, in base units of mint"
+          },
+          "payee": {
+            "type": "string",
+            "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu",
+            "description": "Wallet that receives the payment"
+          }
+        },
+        "required": [
+          "network",
+          "mint",
+          "amount",
+          "payee"
+        ]
+      },
+      "Settlement": {
+        "type": "object",
+        "properties": {
+          "signature": {
+            "type": "string",
+            "description": "Base58 transaction signature"
+          },
+          "receipt": {
+            "type": "string",
+            "description": "Compact JWS (EdDSA) signed by the service key"
+          },
+          "receipt_data": {
+            "$ref": "#/components/schemas/ReceiptData"
+          }
+        },
+        "required": [
+          "signature",
+          "receipt",
+          "receipt_data"
+        ]
+      },
+      "ReceiptData": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "enum": [
+              1
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "transaction": {
+            "type": "string"
+          },
+          "payer": {
+            "type": "string",
+            "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+          },
+          "payee": {
+            "type": "string",
+            "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+          },
+          "mint": {
+            "type": "string",
+            "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+          },
+          "decimals": {
+            "type": "integer"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$",
+            "example": "10000000"
+          },
+          "payee_amount": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$",
+            "example": "10000000"
+          },
+          "usdc_mint": {
+            "type": "string",
+            "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+          },
+          "usdc_decimals": {
+            "type": "integer"
+          },
+          "treasury": {
+            "type": "string",
+            "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+          },
+          "fee_gross": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$",
+            "example": "10000000"
+          },
+          "discount": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$",
+            "example": "10000000"
+          },
+          "fee_net": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$",
+            "example": "10000000"
+          },
+          "issued_at": {
+            "type": "integer"
+          },
+          "referral": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "id",
+          "network",
+          "transaction",
+          "payer",
+          "payee",
+          "mint",
+          "decimals",
+          "amount",
+          "payee_amount",
+          "usdc_mint",
+          "usdc_decimals",
+          "treasury",
+          "fee_gross",
+          "discount",
+          "fee_net",
+          "issued_at",
+          "referral"
+        ]
+      },
+      "UnsignedTransaction": {
+        "type": "object",
+        "properties": {
+          "transaction": {
+            "type": "string",
+            "description": "Base64 wire transaction, unsigned"
+          },
+          "compute_unit_limit": {
+            "type": "integer"
+          },
+          "compute_unit_price": {
+            "type": "string",
+            "description": "Micro-lamports per compute unit"
+          },
+          "last_valid_block_height": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "transaction",
+          "compute_unit_limit",
+          "compute_unit_price",
+          "last_valid_block_height"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/quotes": {
+      "post": {
+        "summary": "Price a payment: fee breakdown, net amount to the payee and a signed 30-second quote",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128,
+              "example": "pay-7f3c2a9e"
+            },
+            "required": true,
+            "name": "idempotency-key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Signed quote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payments": {
+      "post": {
+        "summary": "Relay: verify and broadcast a payment already signed by the payer, and return its receipt",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            },
+            "required": true,
+            "name": "idempotency-key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quote": {
+                    "$ref": "#/components/schemas/Quote"
+                  },
+                  "transaction": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "Base64 wire transaction signed by the payer"
+                  }
+                },
+                "required": [
+                  "quote",
+                  "transaction"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Settled payment and its signed receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settlement"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receipts": {
+      "post": {
+        "summary": "Get a receipt for a payment the payee broadcast itself, once confirmed on-chain",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quote": {
+                    "$ref": "#/components/schemas/Quote"
+                  },
+                  "signature": {
+                    "type": "string",
+                    "minLength": 32,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "quote",
+                  "signature"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Settled payment and its signed receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settlement"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receipts/{id}": {
+      "get": {
+        "summary": "Get a receipt by id (the quote id)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settlement"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receipts/verify": {
+      "post": {
+        "summary": "Verify a receipt: service signature and the matching transaction on-chain",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "receipt": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "receipt"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The receipt is valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "valid": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "receipt_data": {
+                      "$ref": "#/components/schemas/ReceiptData"
+                    },
+                    "slot": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "valid",
+                    "receipt_data",
+                    "slot"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/agents/challenge": {
+      "post": {
+        "summary": "Start optional registration: get a nonce to sign with the agent's Solana key",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "solana_pubkey": {
+                    "type": "string",
+                    "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+                  }
+                },
+                "required": [
+                  "solana_pubkey"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Challenge. Sign `m2m.monster registration\\npubkey: <pubkey>\\nnonce: <nonce>`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "nonce": {
+                      "type": "string"
+                    },
+                    "expires_at": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "nonce",
+                    "expires_at"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/agents/register": {
+      "post": {
+        "summary": "Register with a signed challenge. Unlocks referrals and receipt history; not needed to pay or get paid.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "agent_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "solana_pubkey": {
+                    "type": "string",
+                    "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+                  },
+                  "capabilities": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    "maxItems": 32,
+                    "default": []
+                  },
+                  "referred_by": {
+                    "type": "string",
+                    "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+                  },
+                  "signature": {
+                    "type": "string",
+                    "description": "Base58 ed25519 signature"
+                  }
+                },
+                "required": [
+                  "agent_id",
+                  "solana_pubkey",
+                  "signature"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registered. The api_key is shown once; it only authenticates API calls.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "api_key": {
+                      "type": "string"
+                    },
+                    "mcp": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string"
+                        },
+                        "headers": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "url",
+                        "headers"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "api_key",
+                    "mcp"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/agents/me/referrals": {
+      "get": {
+        "summary": "Referrer, referred agents, credits and expiry dates (get_referral_status)",
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Referral status. Credits are discounts on own fees, never cash.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "referrer": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "referral_link": {
+                      "type": "string"
+                    },
+                    "referred_discount_until": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "referred": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "pubkey": {
+                            "type": "string"
+                          },
+                          "registered_at": {
+                            "type": "integer"
+                          },
+                          "activated_at": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "pubkey",
+                          "registered_at",
+                          "activated_at"
+                        ]
+                      }
+                    },
+                    "credits": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": "string"
+                          },
+                          "remaining": {
+                            "type": "string"
+                          },
+                          "accrued_at": {
+                            "type": "integer"
+                          },
+                          "expires_at": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "amount",
+                          "remaining",
+                          "accrued_at",
+                          "expires_at"
+                        ]
+                      }
+                    },
+                    "available_credits": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "referrer",
+                    "referral_link",
+                    "referred_discount_until",
+                    "referred",
+                    "credits",
+                    "available_credits"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/agents/me/receipts": {
+      "get": {
+        "summary": "Receipt history of the authenticated agent, as payer or payee, newest first",
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Unix seconds"
+            },
+            "required": false,
+            "description": "Unix seconds",
+            "name": "before",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Receipts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "receipts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "signature": {
+                            "type": "string"
+                          },
+                          "receipt": {
+                            "type": "string"
+                          },
+                          "receipt_data": {}
+                        },
+                        "required": [
+                          "signature",
+                          "receipt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "receipts"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payments/build": {
+      "post": {
+        "summary": "Build the unsigned m2m-split transaction for the payer to sign (checks accounts, USDC for the fee, simulates)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quote": {
+                    "$ref": "#/components/schemas/Quote"
+                  },
+                  "payer": {
+                    "type": "string",
+                    "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+                  },
+                  "max_compute_unit_price": {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "description": "Lower priority fee cap in micro-lamports/CU (at most 5,000,000)"
+                  }
+                },
+                "required": [
+                  "quote",
+                  "payer"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unsigned transaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsignedTransaction"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payments/verify": {
+      "post": {
+        "summary": "For the payee: verify a payer-signed transaction against its quote and simulate it, before submitting",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quote": {
+                    "$ref": "#/components/schemas/Quote"
+                  },
+                  "transaction": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048
+                  }
+                },
+                "required": [
+                  "quote",
+                  "transaction"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The payment is valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "valid": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "payer": {
+                      "type": "string",
+                      "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+                    },
+                    "signature": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "valid",
+                    "payer",
+                    "signature"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/refunds/build": {
+      "post": {
+        "summary": "Build an unsigned refund from the payee back to the payer, linked to the receipt. No fee; the original fee is not returned.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "receipt": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Receipt JWS"
+                  },
+                  "amount": {
+                    "type": "string",
+                    "pattern": "^\\d{1,20}$",
+                    "example": "10000000",
+                    "description": "At most the original gross amount"
+                  },
+                  "max_compute_unit_price": {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "description": "Lower priority fee cap in micro-lamports/CU (at most 5,000,000)"
+                  }
+                },
+                "required": [
+                  "receipt",
+                  "amount"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unsigned refund for the payee to sign",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsignedTransaction"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pricing.json": {
+      "get": {
+        "summary": "Agent-to-agent tariff, referral program and whitelisted tokens of this network",
+        "responses": {
+          "200": {
+            "description": "Pricing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status.json": {
+      "get": {
+        "summary": "Service status and API version",
+        "responses": {
+          "200": {
+            "description": "Status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    },
+                    "api_version": {
+                      "type": "string"
+                    },
+                    "versions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "network": {
+                      "type": "string"
+                    },
+                    "service_key": {
+                      "type": "string"
+                    },
+                    "deprecations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "api_version",
+                    "versions",
+                    "network",
+                    "service_key",
+                    "deprecations"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/errors": {
+      "get": {
+        "summary": "Stable error codes and their human-readable text",
+        "responses": {
+          "200": {
+            "description": "Error catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/service-key": {
+      "get": {
+        "summary": "Public key that signs quotes and receipts. It never holds funds.",
+        "responses": {
+          "200": {
+            "description": "Service public key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "address": {
+                      "type": "string",
+                      "example": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu"
+                    }
+                  },
+                  "required": [
+                    "address"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

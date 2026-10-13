@@ -1,0 +1,76 @@
+{
+  "description": "Constants enforced by core. Integers are strings of base units.",
+  "usd_units": "1000000",
+  "agent_fee": {
+    "rateBps": "25",
+    "min": "1000",
+    "max": "500000"
+  },
+  "min_payment": "1000",
+  "referral": {
+    "referredDiscountPercent": "25",
+    "referredDiscountDays": 90,
+    "creditPercent": "10",
+    "creditMonths": 12,
+    "maxCombinedDiscountPercent": "50",
+    "activationSettlements": 20,
+    "activationVolume": "10000000"
+  },
+  "quote_ttl_seconds": 30,
+  "max_compute_unit_price": "5000000",
+  "memo": {
+    "program": "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
+    "prefix": "settled via m2m.monster",
+    "refund_prefix": "refund via m2m.monster"
+  },
+  "x402": {
+    "version": 2,
+    "scheme": "m2m-split"
+  },
+  "networks": {
+    "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": {
+      "name": "solana-mainnet",
+      "usdc": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "mints": [
+        {
+          "symbol": "USDC",
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+        },
+        {
+          "symbol": "USDT",
+          "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+        }
+      ]
+    },
+    "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1": {
+      "name": "solana-devnet",
+      "treasury": "DeQ2ZniNv2BiK746guCUz8tcxJ1HvmLW1e7EjjTiMFMj",
+      "usdc": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+      "mints": [
+        {
+          "symbol": "USDC",
+          "mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+        }
+      ]
+    }
+  },
+  "errors": {
+    "INVALID_REQUEST": "The request is malformed or a field is invalid.",
+    "PAYMENT_BELOW_MINIMUM": "Payment amount is below the $0.001 minimum.",
+    "RECEIVER_TOKEN_ACCOUNT_MISSING": "The payee token account or the treasury USDC account does not exist. Accounts are never created inside a payment.",
+    "SIMULATION_FAILED": "Transaction simulation failed.",
+    "QUOTE_EXPIRED": "The quote has expired or was already used. Request a new quote.",
+    "QUOTE_INVALID": "The quote signature does not match the m2m.monster service key.",
+    "RATE_LIMITED": "Too many requests. Retry later.",
+    "MINT_NOT_ALLOWED": "The token mint is not in the whitelist for this network.",
+    "FEE_BALANCE_INSUFFICIENT_USDC": "The payer does not hold enough USDC to pay the fee. The fee is always paid in USDC.",
+    "PAYMENT_TRANSACTION_INVALID": "The transaction is not the m2m-split transaction described by the quote.",
+    "TRANSACTION_FAILED": "The transaction failed on-chain or was not confirmed in time.",
+    "RECEIPT_INVALID": "The receipt is not signed by the m2m.monster service key or does not match the transaction on-chain.",
+    "NOT_FOUND": "Not found.",
+    "UNAUTHORIZED": "Missing or invalid api_key.",
+    "CHALLENGE_INVALID": "The registration challenge is missing, expired, already used, or not signed by this public key.",
+    "IDEMPOTENCY_KEY_REUSED": "The idempotency key was already used for a different request.",
+    "INTERNAL_ERROR": "Internal error. Retry later."
+  }
+}

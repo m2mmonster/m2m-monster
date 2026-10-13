@@ -1,0 +1,48 @@
+{
+  "name": "@m2m-monster/sdk",
+  "version": "0.1.0",
+  "description": "m2m.monster SDK: non-custodial agent-to-agent payments over x402 (m2m-split) on Solana. Agents sign locally.",
+  "license": "Apache-2.0",
+  "keywords": [
+    "solana",
+    "x402",
+    "payments",
+    "agents",
+    "ai-agents",
+    "m2m-split",
+    "mcp"
+  ],
+  "homepage": "https://sandbox.m2m.monster/llms.txt",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m2mmonster/m2m-monster.git",
+    "directory": "packages/sdk-ts"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "m2m-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "generate:client": "pnpm --package=typescript@5.9.3 --package=openapi-typescript@7.13.0 dlx openapi-typescript ../../spec/openapi.json -o src/api-types.ts"
+  },
+  "dependencies": {
+    "@m2m-monster/core": "workspace:*",
+    "@solana-program/token": "^0.17.0",
+    "@solana/kit": "^8.4.0",
+    "openapi-fetch": "^0.17.0"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "m2m-monster",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.10.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "vitest run",
+    "test:devnet": "vitest run --config vitest.devnet.config.ts",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "openapi": "pnpm --filter @m2m-monster/core build && pnpm --filter @m2m-monster/api build && pnpm --filter @m2m-monster/api openapi",
+    "test:smoke": "vitest run --config vitest.smoke.config.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "24.19.1",
+    "typescript": "7.0.2",
+    "vitest": "5.0.3"
+  },
+  "license": "Apache-2.0"
+}

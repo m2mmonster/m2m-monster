@@ -1,0 +1,136 @@
+{
+  "description": "Agent-to-agent fee (section F) and referral discounts (section C, decisions D3 and D6). Amounts are strings of integer base units. fee_gross, discount and fee_net are in USDC base units (0.000001 USD).",
+  "fee": [
+    {
+      "name": "F table: $0.001 (minimum accepted)",
+      "amount": "1000",
+      "decimals": 6,
+      "fee_gross": "1000"
+    },
+    { "name": "F table: $0.01", "amount": "10000", "decimals": 6, "fee_gross": "1000" },
+    { "name": "F table: $0.10", "amount": "100000", "decimals": 6, "fee_gross": "1000" },
+    { "name": "F table: $0.20", "amount": "200000", "decimals": 6, "fee_gross": "1000" },
+    { "name": "F table: $0.40", "amount": "400000", "decimals": 6, "fee_gross": "1000" },
+    { "name": "F table: $10", "amount": "10000000", "decimals": 6, "fee_gross": "25000" },
+    { "name": "F table: $200", "amount": "200000000", "decimals": 6, "fee_gross": "500000" },
+    { "name": "F table: $1,000", "amount": "1000000000", "decimals": 6, "fee_gross": "500000" },
+    {
+      "name": "rounds up just above the flat tier",
+      "amount": "400001",
+      "decimals": 6,
+      "fee_gross": "1001"
+    },
+    {
+      "name": "rounds up a fractional unit",
+      "amount": "1234567",
+      "decimals": 6,
+      "fee_gross": "3087"
+    },
+    {
+      "name": "exact 0.25% has no rounding",
+      "amount": "4000000",
+      "decimals": 6,
+      "fee_gross": "10000"
+    },
+    { "name": "just below the cap", "amount": "199999999", "decimals": 6, "fee_gross": "500000" },
+    {
+      "name": "below the cap by one unit of fee",
+      "amount": "199599999",
+      "decimals": 6,
+      "fee_gross": "499000"
+    },
+    { "name": "9 decimals: $10", "amount": "10000000000", "decimals": 9, "fee_gross": "25000" },
+    { "name": "9 decimals: rounds up", "amount": "400000001", "decimals": 9, "fee_gross": "1001" },
+    { "name": "2 decimals: $0.01", "amount": "1", "decimals": 2, "fee_gross": "1000" }
+  ],
+  "below_minimum": [
+    { "name": "one unit below $0.001", "amount": "999", "decimals": 6 },
+    { "name": "zero", "amount": "0", "decimals": 6 },
+    { "name": "9 decimals: below $0.001", "amount": "999999", "decimals": 9 }
+  ],
+  "discount": [
+    {
+      "name": "no discount",
+      "fee_gross": "1000",
+      "referred": false,
+      "credits": "0",
+      "discount": "0",
+      "credits_used": "0",
+      "fee_net": "1000"
+    },
+    {
+      "name": "referred 25% on minimum fee",
+      "fee_gross": "1000",
+      "referred": true,
+      "credits": "0",
+      "discount": "250",
+      "credits_used": "0",
+      "fee_net": "750"
+    },
+    {
+      "name": "referred 25% rounds down",
+      "fee_gross": "1001",
+      "referred": true,
+      "credits": "0",
+      "discount": "250",
+      "credits_used": "0",
+      "fee_net": "751"
+    },
+    {
+      "name": "credits only, below cap",
+      "fee_gross": "25000",
+      "referred": false,
+      "credits": "3000",
+      "discount": "3000",
+      "credits_used": "3000",
+      "fee_net": "22000"
+    },
+    {
+      "name": "credits only, capped at 50%",
+      "fee_gross": "25000",
+      "referred": false,
+      "credits": "99999",
+      "discount": "12500",
+      "credits_used": "12500",
+      "fee_net": "12500"
+    },
+    {
+      "name": "referred plus credits, capped at 50%",
+      "fee_gross": "1000",
+      "referred": true,
+      "credits": "1000",
+      "discount": "500",
+      "credits_used": "250",
+      "fee_net": "500"
+    },
+    {
+      "name": "odd fee: cap rounds down, fee_net never below half",
+      "fee_gross": "1001",
+      "referred": true,
+      "credits": "1000",
+      "discount": "500",
+      "credits_used": "250",
+      "fee_net": "501"
+    },
+    {
+      "name": "maximum fee, referred plus partial credits",
+      "fee_gross": "500000",
+      "referred": true,
+      "credits": "100000",
+      "discount": "225000",
+      "credits_used": "100000",
+      "fee_net": "275000"
+    }
+  ],
+  "credit": [
+    { "name": "10% of minimum fee", "fee_net": "1000", "credit": "100" },
+    { "name": "10% of half-discounted minimum fee", "fee_net": "500", "credit": "50" },
+    { "name": "rounds down", "fee_net": "751", "credit": "75" },
+    { "name": "10% of maximum fee", "fee_net": "500000", "credit": "50000" }
+  ],
+  "fee_in_token": [
+    { "name": "6 decimals: same units", "fee_net": "25000", "decimals": 6, "fee_token": "25000" },
+    { "name": "9 decimals: scales up", "fee_net": "25000", "decimals": 9, "fee_token": "25000000" },
+    { "name": "2 decimals: rounds up", "fee_net": "1001", "decimals": 2, "fee_token": "1" }
+  ]
+}
