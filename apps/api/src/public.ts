@@ -18,7 +18,7 @@ import type { AppDeps } from "./app.js";
 const VERSION = "1.0.0";
 
 const DESCRIPTION =
-  "Non-custodial settlement for agent-to-agent payments over x402 with the m2m-split scheme on Solana. Agents sign locally; m2m.monster never holds keys or funds and never pays gas.";
+  "Non-custodial settlement for agent-to-agent payments over x402 with the m2m-split scheme on Solana. Agents sign locally; m2m.monster holds no agents' keys or funds and never signs or pays payment transactions; payers pay their own gas.";
 
 const TOOLS: [id: string, name: string, description: string][] = [
   ["get_pricing", "Get pricing", "Fee formula, referral program and whitelisted token mints."],
@@ -143,7 +143,8 @@ export function capabilities(base: string, network: Network) {
         build: `${base}/v1/refunds/build`,
       },
       relay: {
-        description: "Broadcasts transactions the payer already signed. Never signs or pays.",
+        description:
+          "Broadcasts transactions the payer already signed. Never signs or pays payment transactions.",
         submit: `${base}/v1/payments`,
       },
       discovery: {
@@ -173,7 +174,7 @@ export function terms(base: string) {
       "Non-custodial software provider, not a payment intermediary, not a CASP, does not hold means of access.",
     fee: "The fee is a software usage license fee, not a payment processing commission. It is paid in USDC to the m2m.monster treasury inside the same transaction the payer signs.",
     commitments: [
-      "Agents generate and store their keys locally and sign client-side. m2m.monster never sees seed phrases or private keys and has no recovery capability.",
+      "Agents generate and store their keys locally and sign client-side. m2m.monster never sees agents' seed phrases or private keys and has no recovery capability. Its service key signs quotes and receipts only and never holds funds.",
       "m2m.monster never holds funds: no pooled wallets, no escrow, no ability to freeze. Transfers go directly from the payer's wallet to the payee's wallet.",
       "m2m.monster never sponsors gas. The payer pays its own network fees.",
       "Fees are collected only in USDC. USDT is supported only as a token for agent-to-agent settlement; m2m.monster does not collect fees in it or convert it into other tokens.",

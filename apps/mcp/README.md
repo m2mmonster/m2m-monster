@@ -4,7 +4,7 @@ MCP server (stdio) for [m2m.monster](https://sandbox.m2m.monster/llms.txt): quot
 
 > **0.x beta, Devnet only.** By default it talks to the sandbox `https://sandbox.m2m.monster`.
 
-The server holds no keys and never signs. Tools that move funds return **unsigned** transactions; the agent signs them locally with its own key.
+The server holds no agents' keys or funds and never signs or pays payment transactions. Tools that move funds return **unsigned** transactions; the agent signs them locally with its own key. Quotes and receipts are signed by the m2m.monster service key, which holds no funds.
 
 ```json
 {

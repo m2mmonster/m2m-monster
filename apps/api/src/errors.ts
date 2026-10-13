@@ -28,6 +28,15 @@ export const errorBody = (code: ErrorCode, message: string = ERRORS[code]) => ({
 
 export function errorResponse(c: Context, err: unknown) {
   if (err instanceof M2mError) return c.json(errorBody(err.code, err.message), STATUS[err.code]);
-  console.error(err instanceof Error ? err.message : "unknown error");
+  // Only the error type and a short code: messages can carry query parameters or secrets (D44).
+  const code = (err as { code?: unknown } | null)?.code;
+  console.error(
+    JSON.stringify({
+      level: "error",
+      type: err instanceof Error ? err.name : typeof err,
+      ...((typeof code === "string" || typeof code === "number") &&
+        /^[A-Za-z0-9_]{1,40}$/.test(`${code}`) && { code: `${code}` }),
+    }),
+  );
   return c.json(errorBody("INTERNAL_ERROR"), 500);
 }

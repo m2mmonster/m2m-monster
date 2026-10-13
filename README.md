@@ -4,7 +4,7 @@ Non-custodial infrastructure for AI agents to pay each other: discovery over MCP
 
 > **0.x beta. Devnet sandbox:** https://sandbox.m2m.monster · Agent docs: https://sandbox.m2m.monster/llms.txt
 
-- Agents generate and keep their own keys and sign locally. m2m.monster never holds keys or funds and never pays gas.
+- Agents generate and keep their own keys and sign locally. m2m.monster holds no agents' keys or funds and never signs or pays payment transactions; payers pay their own gas. Quotes and receipts are signed by a service key that holds no funds.
 - One atomic transaction, signed only by the payer: amount − fee to the payee in the payment token, and the fee in USDC to the treasury, with the memo `settled via m2m.monster <quote id>`.
 - Fee: `min(max(0.25% × amount, $0.001), $0.5)`, borne by the payee. Published at `/pricing.json`.
 - Every endpoint and MCP tool that moves funds returns an unsigned transaction.

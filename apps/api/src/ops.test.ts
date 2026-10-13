@@ -1,7 +1,7 @@
 // Request log (method, path, status, duration only) and the daily usage summary from Postgres.
 import { DEVNET, NETWORKS, type SignedQuote } from "@m2m-monster/core";
 import { signatureOf } from "@m2m-monster/core/testing";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, payerTransaction, START, signer, testApp } from "./test-app.js";
 import { usageByDay } from "./usage.js";
 
@@ -90,5 +90,56 @@ describe("usage by day (Postgres)", () => {
         agents_registered: 0,
       },
     ]);
+  });
+});
+
+describe("error log (D44)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("writes only the error type and a safe code, never the message", async () => {
+    const errors: string[] = [];
+    vi.spyOn(console, "error").mockImplementation((line: string) => errors.push(line));
+    const leak = Object.assign(
+      new Error("Failed query: insert ... params: m2m_secretkey, Bearer abc, 203.0.113.7"),
+      { code: "ECONNRESET" },
+    );
+    const broken = await testApp({
+      mintDecimals: async () => {
+        throw leak;
+      },
+    });
+    const payee = await signer(2);
+    const res = await broken.app.request(
+      "/v1/quotes",
+      json(
+        { network: DEVNET, mint: USDC, amount: "10000000", payee: payee.address },
+        { "idempotency-key": "error-log-1234" },
+      ),
+    );
+    expect(res.status).toBe(500);
+    expect(await res.json()).toMatchObject({ error: { code: "INTERNAL_ERROR" } });
+    expect(errors.map((l) => JSON.parse(l))).toEqual([
+      { level: "error", type: "Error", code: "ECONNRESET" },
+    ]);
+    expect(errors.join()).not.toMatch(/secret|Bearer|203\.0|Failed query/);
+  });
+
+  it("drops codes that are not short identifiers", async () => {
+    const errors: string[] = [];
+    vi.spyOn(console, "error").mockImplementation((line: string) => errors.push(line));
+    const broken = await testApp({
+      mintDecimals: async () => {
+        throw Object.assign(new TypeError("x"), { code: "contains a secret value" });
+      },
+    });
+    const payee = await signer(2);
+    await broken.app.request(
+      "/v1/quotes",
+      json(
+        { network: DEVNET, mint: USDC, amount: "10000000", payee: payee.address },
+        { "idempotency-key": "error-log-5678" },
+      ),
+    );
+    expect(errors.map((l) => JSON.parse(l))).toEqual([{ level: "error", type: "TypeError" }]);
   });
 });

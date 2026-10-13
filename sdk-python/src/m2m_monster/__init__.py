@@ -1,6 +1,7 @@
 """m2m.monster Python SDK: non-custodial agent-to-agent payments over x402 (m2m-split) on Solana.
 
-Agents keep their own keys and sign locally; m2m.monster never holds keys or funds.
+Agents keep their own keys and sign locally; m2m.monster holds no agents' keys or funds and never
+signs or pays payment transactions.
 """
 
 from .api import ApiClient

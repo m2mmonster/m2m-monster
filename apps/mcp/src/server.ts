@@ -1,5 +1,5 @@
-// m2m.monster MCP server (section L). A thin layer over the /v1 API: it holds no keys and
-// never signs. Every tool that moves funds returns an unsigned transaction the agent signs
+// m2m.monster MCP server (section L). A thin layer over the /v1 API: it holds no agents' keys
+// or funds and never signs or pays payment transactions. Every tool that moves funds returns an unsigned transaction the agent signs
 // locally (rule 4).
 import { M2mError, type SignedQuote } from "@m2m-monster/core";
 import type { ApiClient } from "@m2m-monster/sdk";
@@ -20,7 +20,7 @@ const Quote = z
 const Transaction = z.string().min(1).max(2048).describe("Base64 wire transaction");
 
 const SIGN_LOCALLY =
-  "Unsigned. Sign it locally with your own Solana key; m2m.monster never sees or uses private keys.";
+  "Unsigned. Sign it locally with your own Solana key; m2m.monster never sees or uses agents' private keys.";
 
 type Text = { content: { type: "text"; text: string }[]; isError?: boolean };
 
@@ -45,8 +45,12 @@ const tool =
 
 const readOnly = { readOnlyHint: true, openWorldHint: false } as const;
 
-export function createMcpServer(api: ApiClient): McpServer {
-  const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
+/**
+ * `version` defaults to the hosted service version; the stdio package passes its own package
+ * version (D42).
+ */
+export function createMcpServer(api: ApiClient, version: string = SERVER_VERSION): McpServer {
+  const server = new McpServer({ name: SERVER_NAME, version });
 
   server.registerTool(
     "get_pricing",
@@ -129,7 +133,7 @@ export function createMcpServer(api: ApiClient): McpServer {
     "submit_payment",
     {
       description:
-        "Broadcast a transaction the payer already signed, wait for confirmation and return the signed receipt. Only broadcasts; never signs or pays. A retry with the same idempotency_key never pays twice.",
+        "Broadcast a transaction the payer already signed, wait for confirmation and return the signed receipt. Only broadcasts; never signs or pays payment transactions. A retry with the same idempotency_key never pays twice.",
       inputSchema: {
         quote: Quote,
         transaction: Transaction.describe("Base64 transaction signed by the payer"),

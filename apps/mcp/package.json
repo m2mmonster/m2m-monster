@@ -1,6 +1,6 @@
 {
   "name": "@m2m-monster/mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "m2m.monster MCP server (stdio): quote, build unsigned, verify and submit agent-to-agent payments over x402 on Solana.",
   "license": "Apache-2.0",
   "keywords": [
