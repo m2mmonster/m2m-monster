@@ -175,7 +175,7 @@ export function terms(base: string) {
     fee: "The fee is a software usage license fee, not a payment processing commission. It is paid in USDC to the m2m.monster treasury inside the same transaction the payer signs.",
     commitments: [
       "Agents generate and store their keys locally and sign client-side. m2m.monster never sees agents' seed phrases or private keys and has no recovery capability. Its service key signs quotes and receipts only and never holds funds.",
-      "m2m.monster never holds funds: no pooled wallets, no escrow, no ability to freeze. Transfers go directly from the payer's wallet to the payee's wallet.",
+      "m2m.monster never holds agents' funds: no pooled wallets, no escrow, no ability to freeze. Transfers go directly from the payer's wallet to the payee's wallet.",
       "m2m.monster never sponsors gas. The payer pays its own network fees.",
       "Fees are collected only in USDC. USDT is supported only as a token for agent-to-agent settlement; m2m.monster does not collect fees in it or convert it into other tokens.",
       "m2m.monster does not convert between fiat currency and stablecoins.",
