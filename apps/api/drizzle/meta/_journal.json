@@ -15,6 +15,13 @@
       "when": 1791563188223,
       "tag": "0001_perfect_speed",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791884070806,
+      "tag": "0002_cute_invaders",
+      "breakpoints": true
     }
   ]
 }

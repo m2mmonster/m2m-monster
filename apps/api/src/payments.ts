@@ -161,7 +161,12 @@ export function registerPaymentRoutes(app: OpenAPIHono, deps: AppDeps, helpers: 
   };
 
   /** Stores one receipt per quote. A quote settled by another transaction is already used. */
-  async function issueReceipt(quote: SignedQuote, payer: string, signature: string) {
+  async function issueReceipt(
+    quote: SignedQuote,
+    payer: string,
+    signature: string,
+    source: "relay" | "report",
+  ) {
     const receipt = receiptFromQuote(quote, {
       payer,
       transaction: signature,
@@ -184,6 +189,7 @@ export function registerPaymentRoutes(app: OpenAPIHono, deps: AppDeps, helpers: 
           discount: receipt.discount,
           feeNet: receipt.fee_net,
           issuedAt: new Date(receipt.issued_at * 1000),
+          source,
           jws,
         })
         .onConflictDoNothing()
@@ -228,7 +234,7 @@ export function registerPaymentRoutes(app: OpenAPIHono, deps: AppDeps, helpers: 
 
         await simulate(deps.rpc, transaction, { sigVerify: true });
         const signature = await submitAndConfirm(deps.rpc, transaction);
-        return issueReceipt(quote, verified.payer, signature);
+        return issueReceipt(quote, verified.payer, signature, "relay");
       },
     );
     return c.json(result, 201);
@@ -260,7 +266,7 @@ export function registerPaymentRoutes(app: OpenAPIHono, deps: AppDeps, helpers: 
     if (verified.signature !== signature) {
       throw new M2mError("PAYMENT_TRANSACTION_INVALID", "The signature does not match.");
     }
-    return c.json(await issueReceipt(quote, verified.payer, signature), 201);
+    return c.json(await issueReceipt(quote, verified.payer, signature, "report"), 201);
   });
 
   app.openapi(getReceiptRoute, async (c) => {

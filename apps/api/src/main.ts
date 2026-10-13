@@ -44,6 +44,7 @@ const app = createApp({
   publicBaseUrl: config.publicBaseUrl,
   clientIp,
   limits: config.limits,
+  log: (line) => console.log(line),
 });
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {

@@ -10,6 +10,7 @@ import {
 } from "@m2m-monster/core";
 import { mcpHttpHandler } from "@m2m-monster/mcp";
 import { createApiClient } from "@m2m-monster/sdk";
+import { sql } from "drizzle-orm";
 import type { Context } from "hono";
 import { authenticatedAgent, registerAgentRoutes, withDiscounts } from "./agents.js";
 import { registerBuildRoutes } from "./builds.js";
@@ -19,6 +20,7 @@ import type { Kv } from "./kv.js";
 import { registerPaymentRoutes } from "./payments.js";
 import { registerPublicRoutes } from "./public.js";
 import { createQuote, quoteRoute } from "./quotes.js";
+import { dailyUsage } from "./schema.js";
 import { errorsRoute, serviceKeyRoute } from "./schemas.js";
 
 export interface AppDeps {
@@ -37,6 +39,8 @@ export interface AppDeps {
   publicBaseUrl: string;
   clientIp: (c: Context) => string;
   limits: { ip: number; pubkey: number; apiKey: number };
+  /** Receives one JSON line per request: method, path, status, duration (D44). */
+  log?: (line: string) => void;
 }
 
 const MINUTE = 60_000;
@@ -101,6 +105,21 @@ export function createApp(deps: AppDeps) {
     return saved ? result : ((await stored()) ?? result);
   };
 
+  // Minimal request log: no headers, api_key, IPs, query strings or bodies (D44).
+  app.use("*", async (c, next) => {
+    const started = performance.now();
+    await next();
+    deps.log?.(
+      JSON.stringify({
+        t: new Date(deps.now()).toISOString(),
+        method: c.req.method,
+        path: new URL(c.req.url).pathname,
+        status: c.res.status,
+        ms: Math.round(performance.now() - started),
+      }),
+    );
+  });
+
   app.onError((err, c) => {
     if (err instanceof M2mError && err.code === "RATE_LIMITED") {
       c.header("Retry-After", `${60 - (Math.floor(deps.now() / 1000) % 60)}`);
@@ -141,6 +160,7 @@ export function createApp(deps: AppDeps) {
             discounts,
           ),
         );
+        await countQuote(deps);
         return priced.quote;
       },
     );
@@ -178,6 +198,15 @@ export function createApp(deps: AppDeps) {
   });
 
   return app;
+}
+
+/** One more quote for today's UTC date (D44). */
+async function countQuote(deps: AppDeps) {
+  const day = new Date(deps.now()).toISOString().slice(0, 10);
+  await deps.db
+    .insert(dailyUsage)
+    .values({ day, quotes: 1 })
+    .onConflictDoUpdate({ target: dailyUsage.day, set: { quotes: sql`${dailyUsage.quotes} + 1` } });
 }
 
 const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";

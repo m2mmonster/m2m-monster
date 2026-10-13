@@ -1,6 +1,7 @@
 // Postgres schema. Migrations: `pnpm --filter @m2m-monster/api db:generate` (drizzle/).
 import {
   type AnyPgColumn,
+  date,
   index,
   integer,
   jsonb,
@@ -81,6 +82,8 @@ export const receipts = pgTable(
     discount: units("discount"),
     feeNet: units("fee_net"),
     issuedAt: timestamp("issued_at", { withTimezone: true }).notNull(),
+    /** `relay` (POST /v1/payments) or `report` (payee broadcast it, POST /v1/receipts). */
+    source: text("source").notNull().default("relay"),
     jws: text("jws").notNull(),
   },
   (t) => [
@@ -88,3 +91,9 @@ export const receipts = pgTable(
     index("receipts_payer_idx").on(t.payer, t.issuedAt),
   ],
 );
+
+/** Quotes issued per UTC day; quotes themselves live only 30 s in Redis (D44). */
+export const dailyUsage = pgTable("daily_usage", {
+  day: date("day").primaryKey(),
+  quotes: integer("quotes").notNull().default(0),
+});

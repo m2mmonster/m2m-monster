@@ -9,7 +9,8 @@
     "start": "node dist/main.js",
     "openapi": "node dist/openapi.js",
     "db:generate": "drizzle-kit generate",
-    "keygen": "node dist/keygen.js"
+    "keygen": "node dist/keygen.js",
+    "usage": "node dist/usage.js"
   },
   "dependencies": {
     "@hono/node-server": "2.1.3",
