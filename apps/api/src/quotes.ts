@@ -4,6 +4,7 @@ import {
   allowedMint,
   M2mError,
   NETWORKS,
+  type Network,
   priceSplit,
   type Quote,
   type SignedQuote,
@@ -12,16 +13,20 @@ import {
 import type { AppDeps } from "./app.js";
 import { BaseUnits, errorResponses, Pubkey } from "./schemas.js";
 
-const QuoteRequest = z
-  .object({
-    network: z.string().openapi({ example: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1" }),
-    mint: Pubkey.openapi({ example: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" }),
-    amount: BaseUnits.openapi({
-      description: "Gross amount the payer pays, in base units of mint",
-    }),
-    payee: Pubkey.openapi({ description: "Wallet that receives the payment" }),
-  })
-  .openapi("QuoteRequest");
+/** Examples come from the deployment's network in core, so mainnet never shows Devnet values. */
+const quoteRequest = (network: Network) =>
+  z
+    .object({
+      network: z.string().openapi({ example: network }),
+      mint: Pubkey.openapi({ example: NETWORKS[network].usdc }),
+      amount: BaseUnits.openapi({
+        description: "Gross amount the payer pays, in base units of mint",
+      }),
+      payee: Pubkey.openapi({ description: "Wallet that receives the payment" }),
+    })
+    .openapi("QuoteRequest");
+
+type QuoteRequest = z.infer<ReturnType<typeof quoteRequest>>;
 
 export const SignedQuoteSchema = z
   .object({
@@ -45,28 +50,29 @@ export const SignedQuoteSchema = z
   })
   .openapi("Quote");
 
-export const quoteRoute = createRoute({
-  method: "post",
-  path: "/v1/quotes",
-  summary: "Price a payment: fee breakdown, net amount to the payee and a signed 30-second quote",
-  request: {
-    headers: z.object({
-      "idempotency-key": z.string().min(8).max(128).openapi({ example: "pay-7f3c2a9e" }),
-    }),
-    body: { content: { "application/json": { schema: QuoteRequest } }, required: true },
-  },
-  responses: {
-    201: {
-      description: "Signed quote",
-      content: { "application/json": { schema: SignedQuoteSchema } },
+export const quoteRoute = (network: Network) =>
+  createRoute({
+    method: "post",
+    path: "/v1/quotes",
+    summary: "Price a payment: fee breakdown, net amount to the payee and a signed 30-second quote",
+    request: {
+      headers: z.object({
+        "idempotency-key": z.string().min(8).max(128).openapi({ example: "pay-7f3c2a9e" }),
+      }),
+      body: { content: { "application/json": { schema: quoteRequest(network) } }, required: true },
     },
-    ...errorResponses(400, 409, 429, 500),
-  },
-});
+    responses: {
+      201: {
+        description: "Signed quote",
+        content: { "application/json": { schema: SignedQuoteSchema } },
+      },
+      ...errorResponses(400, 409, 429, 500),
+    },
+  });
 
 export async function createQuote(
   deps: AppDeps,
-  req: z.infer<typeof QuoteRequest>,
+  req: QuoteRequest,
   ids: { id: string; nonce: string; expiresAt: number },
   discounts: { referred: boolean; credits: bigint } = { referred: false, credits: 0n },
 ): Promise<{ quote: SignedQuote; creditsUsed: bigint }> {

@@ -70,7 +70,9 @@ describe("POST /v1/payments: relay (sections G, K; L submit_payment)", () => {
     const first = await (await submit({ quote, transaction: signed }, "pay-retry-1234")).json();
     const retry = await submit({ quote, transaction: signed }, "pay-retry-1234");
     expect(retry.status).toBe(201);
-    expect(await retry.json()).toEqual(first);
+    // Same settlement, flagged as a repeat so a paywall never serves the resource twice.
+    expect(first).toMatchObject({ replayed: false });
+    expect(await retry.json()).toEqual({ ...first, replayed: true });
     expect(state.sent).toHaveLength(1);
   });
 
@@ -81,6 +83,34 @@ describe("POST /v1/payments: relay (sections G, K; L submit_payment)", () => {
     const again = await submit({ quote, transaction: signed });
     expect(again.status).toBe(410);
     expect(await again.json()).toMatchObject({ error: { code: "QUOTE_EXPIRED" } });
+  });
+
+  it("rejects an idempotency key reused with another transaction", async () => {
+    const { signed } = await payerTransaction(quote, payer);
+    confirmOnChain(signed);
+    expect((await submit({ quote, transaction: signed }, "pay-key-reuse-1")).status).toBe(201);
+    const other = await payerTransaction(quote, payer, { computeUnitLimit: 30_000 });
+    const res = await submit({ quote, transaction: other.signed }, "pay-key-reuse-1");
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ error: { code: "IDEMPOTENCY_KEY_REUSED" } });
+    expect(state.sent).toHaveLength(1);
+  });
+
+  it("rejects a signed transaction presented with another quote of the same price and payee", async () => {
+    const res = await app.request(
+      "/v1/quotes",
+      json(
+        { network: DEVNET, mint: USDC, amount: "10000000", payee: payee.address },
+        { "idempotency-key": `quote-${crypto.randomUUID()}` },
+      ),
+    );
+    const sibling = (await res.json()) as SignedQuote;
+    const { signed } = await payerTransaction(quote, payer);
+    const swapped = await submit({ quote: sibling, transaction: signed });
+    expect(await swapped.json()).toMatchObject({
+      error: { code: "PAYMENT_TRANSACTION_INVALID", message: expect.stringMatching(/memo/) },
+    });
+    expect(state.sent).toHaveLength(0);
   });
 
   it("rejects an unsigned transaction and never broadcasts it", async () => {
@@ -150,7 +180,8 @@ describe("receipts", () => {
       transaction: signatureOf(signed),
     });
     const again = await app.request("/v1/receipts", json(body));
-    expect(await again.json()).toEqual(first);
+    expect(first).toMatchObject({ replayed: false });
+    expect(await again.json()).toEqual({ ...first, replayed: true });
   });
 
   it("POST /v1/receipts rejects a transaction that is not on-chain", async () => {

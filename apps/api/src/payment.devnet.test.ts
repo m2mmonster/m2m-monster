@@ -5,6 +5,7 @@ import {
   type AllowedMint,
   associatedTokenAccount,
   DEVNET,
+  encodeHeader,
   M2mError,
   MEMO_PREFIX,
   mintDecimals,
@@ -18,6 +19,7 @@ import {
   createApiClient,
   createPaymentFetch,
   createPaywall,
+  paymentOutcome,
   payQuote,
   settlementOf,
   submitPayment,
@@ -282,12 +284,17 @@ describe("m2m-split on Devnet (sections G, K)", () => {
     expect(after.treasury - before.treasury).toBe(1_000n);
 
     // A retry with the same key returns the same settlement and never pays twice.
-    expect(await api.relayPayment(quote, transaction, idempotencyKey)).toEqual(settled);
+    expect(settled.replayed).toBe(false);
+    expect(await api.relayPayment(quote, transaction, idempotencyKey)).toEqual({
+      ...settled,
+      replayed: true,
+    });
     expect((await balances(USDC)).payee).toBe(after.payee);
 
     const checked = await api.verifyReceipt(settled.receipt);
     expect(BigInt(checked.slot)).toBeGreaterThan(0n);
-    expect(await api.getReceipt(quote.id)).toEqual(settled);
+    const { replayed: _replayed, ...stored } = settled;
+    expect(await api.getReceipt(quote.id)).toEqual(stored);
   });
 
   it("settles a test-USDT payment with the fee in USDC", async () => {
@@ -332,6 +339,57 @@ describe("m2m-split on Devnet (sections G, K)", () => {
 
     const after = await balances(USDC);
     expect(after.payee - before.payee).toBe(49_000n);
+    expect(after.treasury - before.treasury).toBe(1_000n);
+  });
+
+  it("pays, loses the response, retries: one payment on Devnet (D66)", async () => {
+    const before = await balances(USDC);
+    const paywall = createPaywall({ api, rpc, network: DEVNET, payee: payee.address });
+    const resource = (request: Request) =>
+      paywall.handle(request, { mint: USDC, amount: "20000" }, {}, async () =>
+        Response.json({ paid: true }),
+      );
+    const headers: string[] = [];
+    let paidAttempts = 0;
+    const pay = createPaymentFetch({
+      rpc,
+      signer: payer,
+      serviceAddress,
+      fetch: async (request) => {
+        const header = request.headers.get("PAYMENT-SIGNATURE");
+        if (!header) return resource(request);
+        headers.push(header);
+        paidAttempts++;
+        if (paidAttempts === 1) {
+          await resource(request); // settles on-chain, then the response is lost
+          throw new TypeError("network error: response lost");
+        }
+        if (paidAttempts === 2) {
+          // A seller answer without a receipt: the SDK must decide from the real chain.
+          return new Response("{}", {
+            status: 402,
+            headers: {
+              "PAYMENT-RESPONSE": encodeHeader({
+                success: false,
+                errorReason: "QUOTE_EXPIRED",
+                transaction: "",
+                network: DEVNET,
+              }),
+            },
+          });
+        }
+        return resource(request);
+      },
+    });
+
+    await expect(pay("https://agent.test/retry")).rejects.toThrow("response lost");
+    const viaChain = await pay("https://agent.test/retry");
+    expect(paymentOutcome(viaChain)).toMatchObject({ status: "already_paid" });
+    expect(paymentOutcome(viaChain)?.receipt).toBeUndefined();
+    expect(headers[1]).toBe(headers[0]);
+
+    const after = await balances(USDC);
+    expect(after.payee - before.payee).toBe(19_000n); // exactly one payment
     expect(after.treasury - before.treasury).toBe(1_000n);
   });
 

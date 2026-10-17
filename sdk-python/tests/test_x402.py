@@ -26,13 +26,17 @@ class FakeApi:
     def __init__(self, rpc) -> None:
         self.rpc = rpc
         self.settled: dict[str, dict] = {}
+        self.reported: dict[str, dict] = {}
+        self.quotes = 0
 
     def service_address(self) -> str:
         return str(SERVICE.pubkey())
 
     def request_quote(self, network, mint, amount, payee, idempotency_key) -> dict:
         p = price_split(int(amount), 6)
+        self.quotes += 1
         return signed_quote(
+            id=f"q_test_{self.quotes:04d}",
             network=network,
             mint=mint,
             amount=str(amount),
@@ -45,25 +49,33 @@ class FakeApi:
 
     def relay_payment(self, quote, transaction, idempotency_key) -> dict:
         if idempotency_key in self.settled:
-            return self.settled[idempotency_key]
+            return {**self.settled[idempotency_key], "replayed": True}
         verified = verify_split_transaction(transaction, split_expectation(quote), signed=True)
         signature = self.rpc.call("sendTransaction", [transaction])
+        fields = ("network", "payee", "treasury", "mint", "decimals", "usdc_decimals")
         receipt = {
             "id": quote["id"],
             "transaction": signature,
             "payer": verified["payer"],
             "amount": quote["amount"],
+            "payee_amount": quote["payee_amount"],
             "fee_net": quote["fee_net"],
             "referral": quote["referral"],
+            **{k: quote[k] for k in fields},
         }
         result = {"signature": signature, "receipt": jws(receipt), "receipt_data": receipt}
         self.settled[idempotency_key] = result
-        return result
+        return {**result, "replayed": False}
 
     def report_payment(self, quote, signature) -> dict:
+        if signature in self.reported:
+            return {**self.reported[signature], "replayed": True}
         receipt = {"id": quote["id"], "transaction": signature, "amount": quote["amount"]}
         receipt["referral"] = quote["referral"]
-        return {"signature": signature, "receipt": jws(receipt), "receipt_data": receipt}
+        receipt["payer"] = str(PAYER.pubkey())
+        result = {"signature": signature, "receipt": jws(receipt), "receipt_data": receipt}
+        self.reported[signature] = result
+        return {**result, "replayed": False}
 
 
 def setup(submit: str = "relay"):
@@ -112,16 +124,44 @@ def test_pays_and_gets_the_resource():
     assert len(rpc.sent) == 1 and len(served) == 1
 
 
-def test_retry_with_the_same_payment_never_pays_twice():
-    rpc, http, client, _ = setup()
-    res = http.get(URL)
-    payload = client.payment_payload(decode_header(res.headers[PAYMENT_REQUIRED]))
+def _replay(submit: str):
     from m2m_monster.x402 import encode_header
 
+    rpc, http, client, served = setup(submit)
+    res = http.get(URL)
+    payload = client.payment_payload(decode_header(res.headers[PAYMENT_REQUIRED]))
     header = {"PAYMENT-SIGNATURE": encode_header(payload)}
-    assert http.get(URL, headers=header).status_code == 200
-    assert http.get(URL, headers=header).status_code == 200
-    assert len(rpc.sent) == 1
+    first = http.get(URL, headers=header)
+    again = http.get(URL, headers=header)
+    return rpc, served, first, again
+
+
+def test_a_replayed_payment_signature_never_unlocks_the_resource_again():
+    rpc, served, first, again = _replay("relay")
+    assert first.status_code == 200
+    assert again.status_code == 402
+    failure = settlement_of(again)
+    assert failure["success"] is False
+    assert failure["errorReason"] == "QUOTE_EXPIRED"
+    assert failure["transaction"] == settlement_of(first)["transaction"]
+    receipt = settlement_of(first)["extensions"]["m2m-receipt"]["info"]["receipt"]
+    assert failure["extensions"]["m2m-receipt"]["info"]["receipt"] == receipt
+    assert len(served) == 1 and len(rpc.sent) == 1
+
+    # The recognition documented in the README ("Retries: never pay twice").
+    res = again
+    s = settlement_of(res) or {}
+    found = (s.get("extensions") or {}).get("m2m-receipt", {}).get("info", {}).get("receipt")
+    assert res.status_code == 402 and s.get("errorReason") == "QUOTE_EXPIRED"
+    assert s.get("transaction") and found == receipt
+
+
+def test_a_replayed_payment_is_refused_in_self_mode_too():
+    rpc, served, first, again = _replay("self")
+    assert first.status_code == 200
+    assert again.status_code == 402
+    assert settlement_of(again)["errorReason"] == "QUOTE_EXPIRED"
+    assert len(served) == 1 and len(rpc.sent) == 1
 
 
 def test_rejects_a_quote_for_another_price():

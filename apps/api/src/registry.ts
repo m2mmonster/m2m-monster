@@ -9,14 +9,15 @@ export const REGISTRY_SCHEMA =
 export const REGISTRY_DESCRIPTION =
   "Non-custodial x402 payments between AI agents on Solana. Returns unsigned transactions.";
 
-export function serverJson(base: string, version: string, title = "m2m.monster") {
+/** `base` serves /mcp; `website` defaults to it (production: https://m2m.monster). */
+export function serverJson(base: string, version: string, title = "m2m.monster", website = base) {
   return {
     $schema: REGISTRY_SCHEMA,
     name: "monster.m2m/m2m-monster",
     title,
     description: REGISTRY_DESCRIPTION,
     version,
-    websiteUrl: base,
+    websiteUrl: website,
     remotes: [
       {
         type: "streamable-http",
@@ -34,13 +35,14 @@ export function serverJson(base: string, version: string, title = "m2m.monster")
   };
 }
 
-// node dist/registry.js <base-url> <version> [title] > server.json
+// node dist/registry.js <base-url> <version> [title] [website-url] > server.json
 if (process.argv[1]?.endsWith("registry.js")) {
-  const [base, version, title] = process.argv.slice(2);
+  const [base, version, title, website] = process.argv.slice(2);
   if (!base || !version)
-    throw new Error("Usage: node dist/registry.js <base-url> <version> [title]");
+    throw new Error("Usage: node dist/registry.js <base-url> <version> [title] [website-url]");
+  const trim = (url: string) => url.replace(/\/$/, "");
   writeFileSync(
     1,
-    `${JSON.stringify(serverJson(base.replace(/\/$/, ""), version, title), null, 2)}\n`,
+    `${JSON.stringify(serverJson(trim(base), version, title, website && trim(website)), null, 2)}\n`,
   );
 }

@@ -59,6 +59,10 @@ const Settlement = z
     signature: z.string().openapi({ description: "Base58 transaction signature" }),
     receipt: z.string().openapi({ description: "Compact JWS (EdDSA) signed by the service key" }),
     receipt_data: ReceiptData,
+    replayed: z.boolean().optional().openapi({
+      description:
+        "True when this settlement answers a repeated request (same idempotency key, or a payment already settled). A paywall must not serve the resource again for it.",
+    }),
   })
   .openapi("Settlement");
 
@@ -210,7 +214,7 @@ export function registerPaymentRoutes(app: OpenAPIHono, deps: AppDeps, helpers: 
       transaction: string;
     };
     const { "idempotency-key": idempotencyKey } = c.req.valid("header");
-    const result = await helpers.idempotent(
+    const { value: result, replayed } = await helpers.idempotent(
       "payment",
       idempotencyKey,
       `${quote.id}:${transaction}`,
@@ -237,7 +241,7 @@ export function registerPaymentRoutes(app: OpenAPIHono, deps: AppDeps, helpers: 
         return issueReceipt(quote, verified.payer, signature, "relay");
       },
     );
-    return c.json(result, 201);
+    return c.json({ ...result, replayed }, 201);
   });
 
   app.openapi(reportRoute, async (c) => {
@@ -253,7 +257,7 @@ export function registerPaymentRoutes(app: OpenAPIHono, deps: AppDeps, helpers: 
           "This quote was already settled by another transaction.",
         );
       }
-      return c.json(settlement(existing), 201);
+      return c.json({ ...settlement(existing), replayed: true }, 201);
     }
 
     const confirmed = await fetchConfirmedTransaction(deps.rpc, signature);
@@ -266,7 +270,10 @@ export function registerPaymentRoutes(app: OpenAPIHono, deps: AppDeps, helpers: 
     if (verified.signature !== signature) {
       throw new M2mError("PAYMENT_TRANSACTION_INVALID", "The signature does not match.");
     }
-    return c.json(await issueReceipt(quote, verified.payer, signature, "report"), 201);
+    return c.json(
+      { ...(await issueReceipt(quote, verified.payer, signature, "report")), replayed: false },
+      201,
+    );
   });
 
   app.openapi(getReceiptRoute, async (c) => {

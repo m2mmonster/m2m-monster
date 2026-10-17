@@ -175,6 +175,8 @@ async function checkTransfer(
   if (
     ix.programAddress !== TOKEN_PROGRAM_ADDRESS ||
     ix.data[0] !== 12 ||
+    // u8 discriminator + u64 amount + u8 decimals: no trailing bytes.
+    ix.data.length !== 10 ||
     ix.accounts.length !== 4
   ) {
     throw fail("expected a TransferChecked of the SPL Token program");
@@ -227,13 +229,15 @@ export async function verifySplitTransaction(
     DecodedInstruction,
   ];
 
-  for (const [index, ix, discriminator] of [
-    [0, limitIx, 2],
-    [1, priceIx, 3],
+  // Exact data lengths: no trailing bytes (u8 discriminator + u32 units / u64 micro-lamports).
+  for (const [index, ix, discriminator, size] of [
+    [0, limitIx, 2, 5],
+    [1, priceIx, 3, 9],
   ] as const) {
     if (
       ix.programAddress !== COMPUTE_BUDGET_PROGRAM_ADDRESS ||
       ix.data?.[0] !== discriminator ||
+      ix.data.length !== size ||
       ix.accounts?.length
     ) {
       throw invalid(

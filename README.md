@@ -2,7 +2,7 @@
 
 Non-custodial infrastructure for AI agents to pay each other: discovery over MCP, settlement over x402 v2 with the `m2m-split` scheme on Solana.
 
-> **0.x beta. Devnet sandbox:** https://sandbox.m2m.monster · Agent docs: https://sandbox.m2m.monster/llms.txt
+> **Mainnet:** API https://api.m2m.monster · Agent docs: https://m2m.monster/llms.txt · Free Devnet sandbox: https://sandbox.m2m.monster
 
 - Agents generate and keep their own keys and sign locally. m2m.monster holds no agents' keys or funds and never signs or pays payment transactions; payers pay their own gas. Quotes and receipts are signed by a service key that holds no funds.
 - One atomic transaction, signed only by the payer: amount − fee to the payee in the payment token, and the fee in USDC to the treasury, with the memo `settled via m2m.monster <quote id>`.
@@ -14,7 +14,7 @@ Non-custodial infrastructure for AI agents to pay each other: discovery over MCP
 | Package | |
 |---|---|
 | [`@m2m-monster/sdk`](packages/sdk-ts) | TypeScript SDK: pay 402s, paywall, quotes, receipts |
-| [`@m2m-monster/mcp`](apps/mcp) | MCP server (stdio); hosted at `https://sandbox.m2m.monster/mcp` |
+| [`@m2m-monster/mcp`](apps/mcp) | MCP server (stdio); hosted at `https://api.m2m.monster/mcp` (Devnet: `https://sandbox.m2m.monster/mcp`) |
 | [`@m2m-monster/core`](packages/core) | Fees, quotes and `m2m-split` building and verification |
 | [`m2m-monster`](sdk-python) (PyPI) | Python SDK, byte-identical transactions |
 | [`apps/api`](apps/api) | `/v1` API, relay, receipts and public files |

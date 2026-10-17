@@ -138,7 +138,7 @@ describe("x402 v2 with m2m-split (section G, D21)", () => {
     });
   });
 
-  it("serves a retried payment again without paying twice", async () => {
+  it("a replayed PAYMENT-SIGNATURE never unlocks the resource again (section K)", async () => {
     let header = "";
     const capture = createPaymentFetch({
       rpc: deps.rpc,
@@ -149,10 +149,65 @@ describe("x402 v2 with m2m-split (section G, D21)", () => {
         return resource(request);
       },
     });
-    expect((await capture(URL_)).status).toBe(200);
-    const retry = await resource(new Request(URL_, { headers: { "PAYMENT-SIGNATURE": header } }));
-    expect(retry.status).toBe(200);
-    expect(handled).toBe(2);
+    const first = await capture(URL_);
+    expect(first.status).toBe(200);
+    const replay = await resource(new Request(URL_, { headers: { "PAYMENT-SIGNATURE": header } }));
+    expect(replay.status).toBe(402);
+    const failure = settlementOf(replay);
+    expect(failure).toMatchObject({
+      success: false,
+      errorReason: "QUOTE_EXPIRED",
+      transaction: settlementOf(first)?.transaction,
+    });
+    // The payer still gets its receipt as proof of the original payment.
+    expect(failure?.extensions?.["m2m-receipt"]?.info.receipt).toBe(
+      settlementOf(first)?.extensions?.["m2m-receipt"]?.info.receipt,
+    );
+    expect(handled).toBe(1);
+    expect(state.sent).toHaveLength(1);
+
+    // The recognition documented in llms.txt and the SDK README ("Retries: never pay twice").
+    const res = replay;
+    const s = settlementOf(res);
+    const receipt = s?.extensions?.["m2m-receipt"]?.info.receipt as string | undefined;
+    let alreadyPaid = false;
+    if (res.status === 402 && s?.errorReason === "QUOTE_EXPIRED" && s.transaction && receipt) {
+      const { receipt_data } = await api.verifyReceipt(receipt);
+      expect(receipt_data.amount).toBe("100000");
+      alreadyPaid = true;
+    }
+    expect(alreadyPaid).toBe(true);
+  });
+
+  it("a replayed payment is refused in submit: self mode too", async () => {
+    const paywall = createPaywall({
+      api,
+      rpc: deps.rpc,
+      network: DEVNET,
+      payee: payee.address,
+      submit: "self",
+    });
+    let served = 0;
+    let header = "";
+    const handle = (request: Request) =>
+      paywall.handle(request, PRICE, {}, async () => {
+        served++;
+        return Response.json({ ok: true });
+      });
+    const pay = createPaymentFetch({
+      rpc: deps.rpc,
+      signer: payer,
+      serviceAddress: deps.serviceAddress,
+      fetch: async (request) => {
+        header = request.headers.get("PAYMENT-SIGNATURE") ?? header;
+        return handle(request);
+      },
+    });
+    expect((await pay(URL_)).status).toBe(200);
+    const replay = await handle(new Request(URL_, { headers: { "PAYMENT-SIGNATURE": header } }));
+    expect(replay.status).toBe(402);
+    expect(settlementOf(replay)).toMatchObject({ success: false, errorReason: "QUOTE_EXPIRED" });
+    expect(served).toBe(1);
     expect(state.sent).toHaveLength(1);
   });
 

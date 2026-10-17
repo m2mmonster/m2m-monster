@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "m2m.monster API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Non-custodial settlement for agent-to-agent payments over x402 with the m2m-split scheme on Solana. Every endpoint that moves funds returns unsigned transactions; agents sign locally."
   },
   "servers": [
@@ -137,7 +137,8 @@
                   "UNAUTHORIZED",
                   "CHALLENGE_INVALID",
                   "IDEMPOTENCY_KEY_REUSED",
-                  "INTERNAL_ERROR"
+                  "INTERNAL_ERROR",
+                  "PAYMENT_STATUS_UNKNOWN"
                 ]
               },
               "message": {
@@ -197,6 +198,10 @@
           },
           "receipt_data": {
             "$ref": "#/components/schemas/ReceiptData"
+          },
+          "replayed": {
+            "type": "boolean",
+            "description": "True when this settlement answers a repeated request (same idempotency key, or a payment already settled). A paywall must not serve the resource again for it."
           }
         },
         "required": [

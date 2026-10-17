@@ -18,6 +18,7 @@ ERRORS: dict[str, str] = {
     "CHALLENGE_INVALID": "The registration challenge is missing, expired, already used, or not signed by this public key.",
     "IDEMPOTENCY_KEY_REUSED": "The idempotency key was already used for a different request.",
     "INTERNAL_ERROR": "Internal error. Retry later.",
+    "PAYMENT_STATUS_UNKNOWN": "The status of a signed payment could not be determined. Do not pay again; retry later.",
 }
 
 

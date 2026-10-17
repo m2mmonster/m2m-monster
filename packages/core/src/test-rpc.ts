@@ -20,6 +20,13 @@ export interface MockRpcState {
   transactions: Map<string, { wire: string; err: unknown }>;
   /** Confirm every broadcast transaction immediately. */
   autoConfirm: boolean;
+  /** Block height returned by getBlockHeight (blockhashes from getLatestBlockhash last to 1000). */
+  blockHeight: bigint;
+  /** Finalized slot from getEpochInfo, and the context slot of getSignatureStatuses answers. */
+  finalizedSlot: bigint;
+  statusSlot: bigint;
+  /** RPC methods that fail, to test an unavailable RPC. */
+  failing: Set<string>;
 }
 
 /** Base58 fee-payer signature of a base64 wire transaction. */
@@ -36,6 +43,10 @@ export function mockRpc(): { rpc: SolanaRpc; state: MockRpcState } {
     simulated: [],
     transactions: new Map(),
     autoConfirm: false,
+    blockHeight: 10n,
+    finalizedSlot: 1n,
+    statusSlot: 1n,
+    failing: new Set(),
   };
   const ok = <T>(value: T) => ({ send: async () => value });
   const rpc = {
@@ -85,8 +96,20 @@ export function mockRpc(): { rpc: SolanaRpc; state: MockRpcState } {
       }
     },
     getSignatureStatuses: (signatures: string[]) =>
-      ok({ context: { slot: 1n }, value: signatures.map((s) => state.statuses.get(s) ?? null) }),
-    getBlockHeight: () => ok(10n),
+      ok({
+        context: { slot: state.statusSlot },
+        value: signatures.map((s) => state.statuses.get(s) ?? null),
+      }),
+    getEpochInfo: () =>
+      ok({
+        absoluteSlot: state.finalizedSlot,
+        blockHeight: state.blockHeight,
+        epoch: 0n,
+        slotIndex: 0n,
+        slotsInEpoch: 432_000n,
+        transactionCount: null,
+      }),
+    getBlockHeight: () => ok(state.blockHeight),
     getTransaction: (signature: string) => {
       const tx = state.transactions.get(signature);
       return ok(
@@ -101,7 +124,20 @@ export function mockRpc(): { rpc: SolanaRpc; state: MockRpcState } {
       );
     },
   };
-  return { rpc: rpc as unknown as SolanaRpc, state };
+  const failable = Object.fromEntries(
+    Object.entries(rpc).map(([name, method]) => [
+      name,
+      (...args: never[]) =>
+        state.failing.has(name)
+          ? {
+              send: async () => {
+                throw new Error(`${name}: RPC unavailable`);
+              },
+            }
+          : (method as (...a: never[]) => unknown)(...args),
+    ]),
+  );
+  return { rpc: failable as unknown as SolanaRpc, state };
 }
 
 export function putTokenAccount(

@@ -13,7 +13,9 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "openapi": "pnpm --filter @m2m-monster/core build && pnpm --filter @m2m-monster/api build && pnpm --filter @m2m-monster/api openapi",
-    "test:smoke": "vitest run --config vitest.smoke.config.ts"
+    "test:smoke": "vitest run --config vitest.smoke.config.ts",
+    "test:smoke:prod": "vitest run --config vitest.prod-smoke.config.ts",
+    "terms": "node scripts/gen-terms.mjs && biome format --write apps/api/src/terms-text.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

@@ -34,14 +34,58 @@ describe("request log", () => {
     await ctx.app.request("/.well-known/mcp.json?ref=9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu");
     expect(lines).toHaveLength(2);
     const [first, second] = lines.map((l) => JSON.parse(l));
-    expect(Object.keys(first).sort()).toEqual(["method", "ms", "path", "status", "t"]);
-    expect(first).toMatchObject({ method: "POST", path: "/v1/quotes", status: 401 });
+    expect(Object.keys(first).sort()).toEqual(["code", "method", "ms", "path", "status", "t"]);
+    expect(first).toMatchObject({
+      method: "POST",
+      path: "/v1/quotes",
+      status: 401,
+      code: "UNAUTHORIZED",
+    });
+    expect(Object.keys(second).sort()).toEqual(["method", "ms", "path", "status", "t"]);
     expect(second).toMatchObject({ method: "GET", path: "/.well-known/mcp.json", status: 200 });
     expect(typeof first.ms).toBe("number");
     const all = lines.join("\n");
     for (const secret of ["m2m_secretvalue", "Bearer", "203.0.113.7", "log-key-12345678", "ref="]) {
       expect(all).not.toContain(secret);
     }
+  });
+
+  it("adds the stable code of error responses, so SIMULATION_FAILED can be counted", async () => {
+    const payee = await signer(2);
+    await ctx.app.request(
+      "/v1/quotes",
+      json(
+        { network: DEVNET, mint: USDC, amount: "1", payee: payee.address },
+        { "idempotency-key": "below-min-1234" },
+      ),
+    );
+    await ctx.app.request(
+      "/v1/quotes",
+      json({ network: DEVNET }, { "idempotency-key": "bad-12345678" }),
+    );
+    ctx.state.simulation = {
+      err: { InstructionError: [2, "Custom"] },
+      logs: [],
+      unitsConsumed: 6_000n,
+    };
+    const q = await quote();
+    const { signed } = await payerTransaction(q, await signer(1));
+    await ctx.app.request(
+      "/v1/payments",
+      json({ quote: q, transaction: signed }, { "idempotency-key": "sim-fail-1234" }),
+    );
+    const codes = lines.map((l) => JSON.parse(l)).map((l) => [l.path, l.status, l.code]);
+    expect(codes).toEqual([
+      ["/v1/quotes", 400, "PAYMENT_BELOW_MINIMUM"],
+      ["/v1/quotes", 400, "INVALID_REQUEST"],
+      ["/v1/quotes", 201, undefined],
+      ["/v1/payments", 400, "SIMULATION_FAILED"],
+    ]);
+  });
+
+  it("never logs a code that is not in the catalog", async () => {
+    await ctx.app.request("/no-such-path");
+    expect(JSON.parse(lines[0] as string)).not.toHaveProperty("code");
   });
 });
 

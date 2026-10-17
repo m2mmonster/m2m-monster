@@ -24,6 +24,8 @@ export interface PaidQuote {
   transaction: string;
   computeUnitLimit: number;
   computeUnitPrice: bigint;
+  /** Last block height at which the transaction's blockhash is valid. */
+  lastValidBlockHeight: bigint;
 }
 
 export async function payQuote(options: PayQuoteOptions): Promise<PaidQuote> {
@@ -41,5 +43,6 @@ export async function payQuote(options: PayQuoteOptions): Promise<PaidQuote> {
     transaction: await signSplitTransaction(prepared.transaction, options.signer.keyPair),
     computeUnitLimit: prepared.computeUnitLimit,
     computeUnitPrice: prepared.computeUnitPrice,
+    lastValidBlockHeight: prepared.lastValidBlockHeight,
   };
 }

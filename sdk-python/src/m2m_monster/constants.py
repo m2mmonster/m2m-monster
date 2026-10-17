@@ -46,6 +46,7 @@ DEVNET = "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1"
 NETWORKS: dict[str, dict] = {
     MAINNET: {
         "name": "solana-mainnet",
+        "treasury": "D68nkVrQD3pcs6qNcadXqWvoKqsNCKpLemy3zYVmGHym",
         "usdc": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
         "mints": [
             {"symbol": "USDC", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"},

@@ -15,11 +15,18 @@ export {
 export { submitPayment, type VerifyPaymentOptions, verifyPayment } from "./payee.js";
 export { type PaidQuote, type PayQuoteOptions, payQuote } from "./payer.js";
 export {
+  decideRetry,
+  type PaymentOutcome,
+  type RetryDecision,
+  type RetryEvidence,
+} from "./retry.js";
+export {
   createPaymentFetch,
   createPaywall,
   m2mSplitSchemeClient,
   type PayerOptions,
   type PaywallOptions,
   type Price,
+  paymentOutcome,
   settlementOf,
 } from "./x402.js";

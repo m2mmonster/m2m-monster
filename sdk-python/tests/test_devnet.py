@@ -84,7 +84,10 @@ def test_relay_settles_once():
     paid = pay_quote(RPC, PAYER, q, SERVICE)
     key = f"py-{uuid.uuid4()}"
     settled = API.relay_payment(q, paid["transaction"], key)
-    assert API.relay_payment(q, paid["transaction"], key) == settled
+    again = API.relay_payment(q, paid["transaction"], key)
+    # Same payment, flagged as a repeat (D54): same signature and receipt, never a second payment.
+    assert settled.get("replayed") is False and again.get("replayed") is True
+    assert {**again, "replayed": False} == settled
     after = balances()
     assert after["payee"] - before["payee"] == 199_000
     assert after["treasury"] - before["treasury"] == 1_000

@@ -10,7 +10,7 @@ message="${2:?commit message}"
 : "${PUBLIC_GIT_NAME:?set PUBLIC_GIT_NAME}" "${PUBLIC_GIT_EMAIL:?set PUBLIC_GIT_EMAIL}"
 
 # Paths that never leave the private repository.
-EXCLUDE=(CLAUDE.md docs deploy/EASYPANEL.md)
+EXCLUDE=(CLAUDE.md docs deploy/EASYPANEL.md apps/api/manual)
 
 root="$(git rev-parse --show-toplevel)"
 mkdir -p "$dest"
@@ -27,5 +27,16 @@ for path in "${EXCLUDE[@]}"; do
 done
 
 git -C "$dest" add -A
+
+# Copy the git mode of every exported file from the private tree: extraction loses the
+# executable bit where the filesystem does not keep it (Windows, core.fileMode=false).
+while IFS=$'\t' read -r meta path; do
+  [ -e "$dest/$path" ] || continue # excluded
+  case "${meta%% *}" in
+    100755) git -C "$dest" update-index --chmod=+x -- "$path" ;;
+    100644) git -C "$dest" update-index --chmod=-x -- "$path" ;;
+  esac
+done < <(git -C "$root" ls-tree -r HEAD)
+
 git -C "$dest" -c user.name="$PUBLIC_GIT_NAME" -c user.email="$PUBLIC_GIT_EMAIL" \
   commit -q -m "$message" && git -C "$dest" log --oneline -1

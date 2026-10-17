@@ -1,5 +1,6 @@
 // x402 v2 over HTTP with the m2m-split scheme (section G; decisions D15, D21, D34).
-// Payee: `createPaywall` answers 402 and settles. Payer: `createPaymentFetch` pays and retries.
+// Payee: `createPaywall` answers 402 and settles. Payer: `createPaymentFetch` pays and retries,
+// never paying twice for one request (D66).
 import {
   decodeHeader,
   encodeHeader,
@@ -18,13 +19,26 @@ import {
   type SolanaRpc,
   splitExpectation,
   verifyQuote,
+  verifyReceipt,
   verifySplitTransaction,
   X402_VERSION,
 } from "@m2m-monster/core";
-import type { KeyPairSigner } from "@solana/kit";
+import {
+  getBase64Encoder,
+  getSignatureFromTransaction,
+  getTransactionDecoder,
+  type KeyPairSigner,
+} from "@solana/kit";
 import type { ApiClient, Settlement } from "./api.js";
 import { submitPayment, verifyPayment } from "./payee.js";
 import { payQuote } from "./payer.js";
+import {
+  chainEvidence,
+  decideRetry,
+  type PaymentOutcome,
+  type RetryEvidence,
+  requestKey,
+} from "./retry.js";
 
 export interface Price {
   /** Whitelisted mint (USDC or USDT on mainnet; USDC on Devnet). */
@@ -102,6 +116,24 @@ export function createPaywall(options: PaywallOptions) {
     const serviceAddress = await options.api.serviceAddress();
 
     if (options.submit === "self") {
+      // A payment already on-chain is a replay: never broadcast it again, return its receipt.
+      const { signature: existing } = await verifySplitTransaction(
+        transaction,
+        splitExpectation(quote),
+        { signed: true },
+      );
+      if (existing) {
+        const { value } = await options.rpc
+          .getSignatureStatuses([existing as never], { searchTransactionHistory: true })
+          .send();
+        if (value[0]) {
+          const settlement = await options.api.reportPayment(quote, existing);
+          return {
+            settlement: { ...settlement, replayed: true },
+            payer: settlement.receipt_data.payer,
+          };
+        }
+      }
       const verified = await verifyPayment({
         rpc: options.rpc,
         quote,
@@ -158,6 +190,23 @@ export function createPaywall(options: PaywallOptions) {
       }
 
       const { settlement, payer } = result;
+      // A signed payload unlocks the resource only once (section K). A repeat gets its receipt
+      // back as proof of the original payment, never the resource.
+      if (settlement.replayed) {
+        const repeated: SettlementResponse = {
+          success: false,
+          errorReason: "QUOTE_EXPIRED",
+          transaction: settlement.signature,
+          network: options.network,
+          payer,
+          extensions: { "m2m-receipt": { info: { receipt: settlement.receipt } } },
+        };
+        return json(
+          { error: { code: "QUOTE_EXPIRED", message: "This payment was already used." } },
+          402,
+          { [HEADERS.paymentResponse]: encodeHeader(repeated) },
+        );
+      }
       const response = await handler();
       const success: SettlementResponse = {
         success: true,
@@ -188,14 +237,28 @@ export interface PayerOptions {
   maxComputeUnitPrice?: bigint;
 }
 
+/** A payment the payer signed, kept until its outcome is known. */
+interface PendingPayment {
+  header: string;
+  paymentId: string;
+  quoteId: string;
+  signature: string;
+  lastValidBlockHeight: bigint;
+}
+
 async function m2mPayload(
   options: PayerOptions,
   accepted: PaymentRequirements,
   required: Pick<PaymentRequired, "resource" | "extensions">,
-): Promise<PaymentPayload> {
+): Promise<{
+  payload: PaymentPayload;
+  quoteId: string;
+  signature: string;
+  lastValidBlockHeight: bigint;
+}> {
   const quote = quoteFromRequirements(accepted);
   // payQuote checks the quote signature, expiry, treasury and whitelist before paying.
-  const { transaction } = await payQuote({
+  const { transaction, lastValidBlockHeight } = await payQuote({
     rpc: options.rpc,
     signer: options.signer,
     quote,
@@ -204,7 +267,7 @@ async function m2mPayload(
       maxComputeUnitPrice: options.maxComputeUnitPrice,
     }),
   });
-  return {
+  const payload: PaymentPayload = {
     x402Version: X402_VERSION,
     resource: required.resource,
     accepted,
@@ -217,18 +280,97 @@ async function m2mPayload(
       },
     },
   };
+  const signature = getSignatureFromTransaction(
+    getTransactionDecoder().decode(getBase64Encoder().encode(transaction)),
+  );
+  return { payload, quoteId: quote.id, signature, lastValidBlockHeight };
+}
+
+const outcomes = new WeakMap<Response, PaymentOutcome>();
+
+/** Outcome of a request `createPaymentFetch` paid for; undefined if it carried no payment. */
+export function paymentOutcome(response: Response): PaymentOutcome | undefined {
+  return outcomes.get(response);
+}
+
+/** Decides what a seller's answer means for a pending payment (D66). */
+async function resolvePayment(
+  options: PayerOptions,
+  pending: PendingPayment,
+  response: Response,
+): Promise<PaymentOutcome> {
+  const s = settlementOf(response);
+  const receipt = s?.extensions?.["m2m-receipt"]?.info.receipt as string | undefined;
+  const base = { paymentId: pending.paymentId, transaction: pending.signature };
+
+  let settlement: RetryEvidence["settlement"] = "other";
+  if (s?.success && s.transaction === pending.signature) settlement = "success";
+  else if (response.status === 402 && s?.errorReason === "QUOTE_EXPIRED") {
+    settlement =
+      s.transaction && receipt ? "quote_expired_with_receipt" : "quote_expired_without_receipt";
+  }
+  if (settlement === "success") return { status: "paid", ...base, ...(receipt && { receipt }) };
+
+  if (settlement === "quote_expired_with_receipt" && receipt) {
+    const verified = await verifyReceipt(options.rpc, receipt, options.serviceAddress).then(
+      // Proof only for this payment: its transaction and its quote.
+      ({ receipt: data }) =>
+        data.transaction === pending.signature && data.id === pending.quoteId ? data : undefined,
+      () => undefined,
+    );
+    if (verified) return { status: "already_paid", ...base, receipt, receiptData: verified };
+  }
+
+  const evidence: RetryEvidence = {
+    settlement,
+    receipt: settlement === "quote_expired_with_receipt" ? "invalid" : null,
+    ...(await chainEvidence(options.rpc, pending.signature, pending.lastValidBlockHeight)),
+  };
+  const decision = decideRetry(evidence);
+  if (decision === "unknown" || decision === "paid") {
+    throw new M2mError(
+      "PAYMENT_STATUS_UNKNOWN",
+      `The status of payment ${pending.signature} could not be determined (seller: ${settlement}, chain: ${evidence.signature_status}, blockhash expired: ${evidence.blockhash_expired}). Do not pay again; repeat the request later.`,
+    );
+  }
+  return { status: decision, ...base };
 }
 
 /**
  * Payer side: a `fetch` that answers an m2m-split 402 by paying (build, simulate and sign
  * locally) and retrying with the `PAYMENT-SIGNATURE` header.
+ *
+ * It never pays twice for one request (D66). The signed payment is kept in memory, bound to the
+ * request (its `Idempotency-Key` header, else method, URL and body), until its outcome is known.
+ * Repeating the request resends the same payment instead of requesting a new quote. Read the
+ * outcome with `paymentOutcome(response)`. If the outcome cannot be determined, it throws
+ * `PAYMENT_STATUS_UNKNOWN` and keeps the payment; repeat the request later. Concurrent calls for
+ * the same request share one attempt. Pending payments live in memory only: after a restart,
+ * check the chain before paying again (D67).
  */
 export function createPaymentFetch(
   options: PayerOptions & { fetch?: (request: Request) => Promise<Response> },
 ) {
   const send = options.fetch ?? ((request: Request) => fetch(request));
-  return async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-    const request = new Request(input, init);
+  const pending = new Map<string, PendingPayment>();
+  // Concurrent calls for the same request share one attempt, so they never sign twice (D67).
+  const inflight = new Map<string, Promise<Response>>();
+
+  const sendPayment = async (key: string, payment: PendingPayment, request: Request) => {
+    const retry = new Request(request);
+    retry.headers.set(HEADERS.paymentSignature, payment.header);
+    // A network error keeps the payment pending: the next attempt resends it.
+    const response = await send(retry);
+    const outcome = await resolvePayment(options, payment, response);
+    pending.delete(key);
+    outcomes.set(response, outcome);
+    return response;
+  };
+
+  const attempt = async (key: string, request: Request): Promise<Response> => {
+    const existing = pending.get(key);
+    if (existing) return sendPayment(key, existing, request);
+
     const first = await send(request.clone());
     const header = first.headers.get(HEADERS.paymentRequired);
     if (first.status !== 402 || !header) return first;
@@ -239,10 +381,39 @@ export function createPaymentFetch(
     );
     if (!accepted) return first;
 
-    const payload = await m2mPayload(options, accepted, required);
-    const retry = new Request(request);
-    retry.headers.set(HEADERS.paymentSignature, encodeHeader(payload));
-    return send(retry);
+    const { payload, quoteId, signature, lastValidBlockHeight } = await m2mPayload(
+      options,
+      accepted,
+      required,
+    );
+    const payment: PendingPayment = {
+      header: encodeHeader(payload),
+      paymentId: paymentIdOf(payload) ?? "",
+      quoteId,
+      signature,
+      lastValidBlockHeight,
+    };
+    pending.set(key, payment);
+    return sendPayment(key, payment, request);
+  };
+
+  /** Every caller gets its own copy; the shared response is never read. */
+  const copy = (response: Response) => {
+    const clone = response.clone();
+    const outcome = outcomes.get(response);
+    if (outcome) outcomes.set(clone, outcome);
+    return clone;
+  };
+
+  return async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    const request = new Request(input, init);
+    const key = await requestKey(request);
+    let run = inflight.get(key);
+    if (!run) {
+      run = attempt(key, request).finally(() => inflight.delete(key));
+      inflight.set(key, run);
+    }
+    return copy(await run);
   };
 }
 
@@ -273,7 +444,7 @@ export function m2mSplitSchemeClient(options: PayerOptions) {
           "The amount is above the client's maxAmountPerPayment.",
         );
       }
-      const payload = await m2mPayload(options, requirements, {
+      const { payload } = await m2mPayload(options, requirements, {
         resource: { url: "" },
         extensions: (context?.extensions ?? {}) as PaymentRequired["extensions"],
       });

@@ -378,7 +378,10 @@ export function registerAgentRoutes(app: OpenAPIHono, deps: AppDeps) {
     return c.json(
       {
         api_key: apiKey,
-        mcp: { url: `${deps.publicBaseUrl}/mcp`, headers: { Authorization: `Bearer ${apiKey}` } },
+        mcp: {
+          url: `${deps.apiBaseUrl ?? deps.publicBaseUrl}/mcp`,
+          headers: { Authorization: `Bearer ${apiKey}` },
+        },
       },
       201,
     );

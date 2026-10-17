@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..types import UNSET, Unset
+
 if TYPE_CHECKING:
     from ..models.receipt_data import ReceiptData
 
@@ -20,11 +22,14 @@ class Settlement:
         signature (str): Base58 transaction signature
         receipt (str): Compact JWS (EdDSA) signed by the service key
         receipt_data (ReceiptData):
+        replayed (bool | Unset): True when this settlement answers a repeated request (same idempotency key, or a
+            payment already settled). A paywall must not serve the resource again for it.
     """
 
     signature: str
     receipt: str
     receipt_data: ReceiptData
+    replayed: bool | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -33,6 +38,8 @@ class Settlement:
         receipt = self.receipt
 
         receipt_data = self.receipt_data.to_dict()
+
+        replayed = self.replayed
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -43,6 +50,8 @@ class Settlement:
                 "receipt_data": receipt_data,
             }
         )
+        if replayed is not UNSET:
+            field_dict["replayed"] = replayed
 
         return field_dict
 
@@ -57,10 +66,13 @@ class Settlement:
 
         receipt_data = ReceiptData.from_dict(d.pop("receipt_data"))
 
+        replayed = d.pop("replayed", UNSET)
+
         settlement = cls(
             signature=signature,
             receipt=receipt,
             receipt_data=receipt_data,
+            replayed=replayed,
         )
 
         settlement.additional_properties = d

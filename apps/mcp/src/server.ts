@@ -7,7 +7,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
 export const SERVER_NAME = "m2m-monster";
-export const SERVER_VERSION = "1.0.0";
+export const SERVER_VERSION = "1.1.0";
 
 const Pubkey = z.string().min(32).max(44).describe("Base58 Solana public key");
 const Units = z

@@ -1,6 +1,6 @@
 {
   "name": "@m2m-monster/sdk",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "description": "m2m.monster SDK: non-custodial agent-to-agent payments over x402 (m2m-split) on Solana. Agents sign locally.",
   "license": "Apache-2.0",
   "keywords": [
@@ -12,7 +12,7 @@
     "m2m-split",
     "mcp"
   ],
-  "homepage": "https://sandbox.m2m.monster/llms.txt",
+  "homepage": "https://m2m.monster/llms.txt",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/m2mmonster/m2m-monster.git",

@@ -5,6 +5,12 @@ export default defineConfig({
   ssr: { resolve: { conditions: ["m2m-source"] } },
   test: {
     include: ["packages/*/src/**/*.test.ts", "apps/*/src/**/*.test.ts"],
-    exclude: ["**/*.devnet.test.ts", "**/*.smoke.test.ts", "**/node_modules/**", "**/dist/**"],
+    exclude: [
+      "**/*.devnet.test.ts",
+      "**/*.smoke.test.ts",
+      "**/*.prod-smoke.test.ts",
+      "**/node_modules/**",
+      "**/dist/**",
+    ],
   },
 });

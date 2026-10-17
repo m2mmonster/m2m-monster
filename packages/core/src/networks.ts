@@ -15,7 +15,10 @@ export interface NetworkConfig {
   name: string;
   /** USDC mint: the only token the fee is paid in (rule 5). */
   usdc: string;
-  /** Treasury wallet (cold multisig on mainnet, rule 9). Unset until the user provides it. */
+  /**
+   * Treasury wallet: single-key, multisig planned as the project grows (rule 9). Only its public
+   * address is known here; no server holds its key. The API refuses to start without a valid one.
+   */
   treasury?: string;
   mints: readonly AllowedMint[];
 }
@@ -23,6 +26,9 @@ export interface NetworkConfig {
 export const NETWORKS: Record<Network, NetworkConfig> = {
   [MAINNET]: {
     name: "solana-mainnet",
+    // Provided by the user on 2026-10-15 (D58); its USDC account (classic SPL Token ATA) is
+    // EWQ5w4DPmkinV4iHn9H7pcwx5Q8fYQCnY46CzGD1ErTk.
+    treasury: "D68nkVrQD3pcs6qNcadXqWvoKqsNCKpLemy3zYVmGHym",
     usdc: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
     mints: [
       { symbol: "USDC", mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },

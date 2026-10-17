@@ -10,7 +10,9 @@
     "openapi": "node dist/openapi.js",
     "db:generate": "drizzle-kit generate",
     "keygen": "node dist/keygen.js",
-    "usage": "node dist/usage.js"
+    "usage": "node dist/usage.js",
+    "check-treasury": "node dist/check-treasury.js",
+    "final-test": "tsx --conditions=m2m-source manual/mainnet-final-test.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.3",

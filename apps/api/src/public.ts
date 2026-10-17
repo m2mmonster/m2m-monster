@@ -15,8 +15,9 @@ import {
 } from "@m2m-monster/core";
 import { isAddress } from "@solana/kit";
 import type { AppDeps } from "./app.js";
+import { TERMS_TEXT, TERMS_TITLE, TERMS_VERSION } from "./terms-text.js";
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 
 const DESCRIPTION =
   "Non-custodial settlement for agent-to-agent payments over x402 with the m2m-split scheme on Solana. Agents sign locally; m2m.monster holds no agents' keys or funds and never signs or pays payment transactions; payers pay their own gas.";
@@ -38,24 +39,27 @@ const TOOLS: [id: string, name: string, description: string][] = [
   ["get_status", "Service status", "Service status and API version."],
 ];
 
-function urls(base: string) {
+// `base` serves the public files and referral links; `api` serves /v1 and /mcp. In production
+// they are m2m.monster and api.m2m.monster (same container); elsewhere they are equal.
+function urls(base: string, api: string) {
   return {
-    api: `${base}/v1`,
-    openapi: `${base}/v1/openapi.json`,
-    errors: `${base}/v1/errors`,
-    mcp: `${base}/mcp`,
+    api: `${api}/v1`,
+    openapi: `${api}/v1/openapi.json`,
+    errors: `${api}/v1/errors`,
+    mcp: `${api}/mcp`,
     mcp_manifest: `${base}/.well-known/mcp.json`,
     agent_card: `${base}/.well-known/agent-card.json`,
     x402: `${base}/.well-known/x402.json`,
     pricing: `${base}/pricing.json`,
     capabilities: `${base}/capabilities.json`,
     terms: `${base}/terms.json`,
+    terms_page: `${base}/terms`,
     status: `${base}/status.json`,
     docs: `${base}/llms.txt`,
   };
 }
 
-export function mcpManifest(base: string, ref?: string) {
+export function mcpManifest(base: string, ref?: string, api = base) {
   return {
     $schema: "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
     name: "monster.m2m/m2m-monster",
@@ -63,7 +67,7 @@ export function mcpManifest(base: string, ref?: string) {
     description: DESCRIPTION,
     version: VERSION,
     websiteUrl: base,
-    remotes: [{ type: "streamable-http", url: `${base}/mcp` }],
+    remotes: [{ type: "streamable-http", url: `${api}/mcp` }],
     tools: TOOLS.map(([name, , description]) => ({ name, description })),
     ...(ref && {
       referral: {
@@ -74,10 +78,10 @@ export function mcpManifest(base: string, ref?: string) {
   };
 }
 
-export function agentCard(base: string) {
+export function agentCard(base: string, api = base) {
   return {
     name: "m2m.monster",
-    description: `${DESCRIPTION} Interfaces: REST API (${base}/v1/openapi.json) and MCP (${base}/mcp). It does not expose an A2A protocol binding.`,
+    description: `${DESCRIPTION} Interfaces: REST API (${api}/v1/openapi.json) and MCP (${api}/mcp). It does not expose an A2A protocol binding.`,
     supportedInterfaces: [],
     provider: { organization: "m2m.monster", url: base },
     version: VERSION,
@@ -94,7 +98,7 @@ export function agentCard(base: string) {
   };
 }
 
-export function x402Info(base: string, network: Network) {
+export function x402Info(network: Network, api: string) {
   const config = NETWORKS[network];
   return {
     x402Version: X402_VERSION,
@@ -113,13 +117,13 @@ export function x402Info(base: string, network: Network) {
     ],
     headers: ["PAYMENT-REQUIRED", "PAYMENT-SIGNATURE", "PAYMENT-RESPONSE"],
     extensions: ["payment-identifier", "m2m-referral", "m2m-receipt"],
-    quotes: `${base}/v1/quotes`,
-    relay: `${base}/v1/payments`,
+    quotes: `${api}/v1/quotes`,
+    relay: `${api}/v1/payments`,
     specification: "https://github.com/x402-foundation/x402",
   };
 }
 
-export function capabilities(base: string, network: Network) {
+export function capabilities(base: string, network: Network, api = base) {
   const tokens = NETWORKS[network].mints.map((m) => m.symbol);
   return {
     version: 1,
@@ -136,21 +140,21 @@ export function capabilities(base: string, network: Network) {
       verifiable_receipts: {
         description:
           "Signed receipt (compact JWS, EdDSA) per settlement, linked to the on-chain signature.",
-        verify: `${base}/v1/receipts/verify`,
+        verify: `${api}/v1/receipts/verify`,
       },
       refund_tooling: {
         description:
           "Builds unsigned refunds from the payee back to the payer, linked to the original receipt.",
-        build: `${base}/v1/refunds/build`,
+        build: `${api}/v1/refunds/build`,
       },
       relay: {
         description:
           "Broadcasts transactions the payer already signed. Never signs or pays payment transactions.",
-        submit: `${base}/v1/payments`,
+        submit: `${api}/v1/payments`,
       },
       discovery: {
-        mcp: `${base}/mcp`,
-        openapi: `${base}/v1/openapi.json`,
+        mcp: `${api}/mcp`,
+        openapi: `${api}/v1/openapi.json`,
         x402: `${base}/.well-known/x402.json`,
       },
       referral_credits: {
@@ -166,8 +170,26 @@ export function capabilities(base: string, network: Network) {
   };
 }
 
-/** Statements of section J. Draft until the legal review before mainnet (section M). */
-export function terms(base: string) {
+/**
+ * Mainnet: the approved terms, generated from docs/terms-en.md (D56). Devnet: the section J
+ * statements, still marked as a draft (the sandbox does not change).
+ */
+export function terms(base: string, network: Network) {
+  if (network !== DEVNET) {
+    return {
+      title: TERMS_TITLE,
+      version: TERMS_VERSION,
+      last_updated: TERMS_VERSION,
+      language: "en",
+      text: TERMS_TEXT,
+      pricing: `${base}/pricing.json`,
+    };
+  }
+  return draftTerms(base);
+}
+
+/** Devnet sandbox terms: the section J statements, still a draft. */
+function draftTerms(base: string) {
   return {
     version: 1,
     status: "draft, pending legal review before mainnet",
@@ -187,6 +209,22 @@ export function terms(base: string) {
   };
 }
 
+/** Human-readable /terms (section J condition 6): the same content as /terms.json. */
+export function termsPage(base: string, network: Network): string {
+  if (network !== DEVNET) return TERMS_TEXT;
+  const t = draftTerms(base);
+  return `m2m.monster terms (${t.status})
+
+${t.statement}
+
+${t.fee}
+
+${t.commitments.map((c, i) => `${i + 1}. ${c}`).join("\n")}
+
+Pricing: ${t.pricing}
+`;
+}
+
 export function status(network: Network, serviceAddress: string) {
   return {
     status: "ok" as const,
@@ -198,7 +236,7 @@ export function status(network: Network, serviceAddress: string) {
   };
 }
 
-export function agentDocs(base: string, network: Network): string {
+export function agentDocs(base: string, network: Network, api = base): string {
   const p = pricing(network);
   const config = NETWORKS[network];
   const usdc = config.usdc;
@@ -208,8 +246,8 @@ export function agentDocs(base: string, network: Network): string {
 > ${DESCRIPTION}
 
 - Network: \`${network}\` (${config.name})
-- API: ${base}/v1 · OpenAPI: ${base}/v1/openapi.json · Errors: ${base}/v1/errors
-- MCP (streamable HTTP): ${base}/mcp
+- API: ${api}/v1 · OpenAPI: ${api}/v1/openapi.json · Errors: ${api}/v1/errors
+- MCP (streamable HTTP): ${api}/mcp
 - x402 scheme: \`${M2M_SPLIT}\` (x402 v${X402_VERSION})
 
 ## Fee
@@ -233,7 +271,7 @@ import { createApiClient, createPaymentFetch } from "@m2m-monster/sdk";
 import { createKeyPairSignerFromBytes, createSolanaRpc } from "@solana/kit";
 
 const signer = await createKeyPairSignerFromBytes(yourSecretKeyBytes); // stays local
-const api = createApiClient("${base}");
+const api = createApiClient("${api}");
 const pay = createPaymentFetch({
   rpc: createSolanaRpc(YOUR_RPC_URL),
   signer,
@@ -249,7 +287,7 @@ import { createApiClient, createPaywall } from "@m2m-monster/sdk";
 import { createSolanaRpc } from "@solana/kit";
 
 const paywall = createPaywall({
-  api: createApiClient("${base}", { apiKey: YOUR_API_KEY }), // apiKey optional
+  api: createApiClient("${api}", { apiKey: YOUR_API_KEY }), // apiKey optional
   rpc: createSolanaRpc(YOUR_RPC_URL),
   network: "${network}",
   payee: YOUR_WALLET,
@@ -261,6 +299,57 @@ return paywall.handle(request, { mint: "${usdc}", amount: "100000" }, { descript
 \`\`\`
 
 The payee's token account and the treasury USDC account must exist before paying; payments never create accounts.
+
+## Retries: never pay twice
+
+\`createPaymentFetch\` keeps each payment it signs in memory, bound to the request (its
+\`Idempotency-Key\` header, else method, URL and body), until the outcome is known. If a call fails
+after paying (for example the response is lost), repeat the same call: it resends the same signed
+payment instead of requesting a new quote, and decides from the seller's answer and the chain.
+
+\`\`\`ts
+import { paymentOutcome } from "@m2m-monster/sdk";
+
+const res = await pay("https://seller.example/resource"); // if it throws, repeat this same call
+const outcome = paymentOutcome(res); // undefined when no payment was needed
+// outcome.status: "paid" | "already_paid" | "not_paid"; outcome.transaction, outcome.receipt,
+// outcome.receiptData (only when the SDK verified the receipt)
+\`\`\`
+
+- \`paid\`: this response settled the payment.
+- \`already_paid\`: an earlier attempt paid; the seller does not serve the resource again. The
+  receipt is set when the seller returned it and the SDK verified it on-chain (service signature,
+  confirmed transaction, this payment's signature); otherwise the transaction is confirmed
+  on-chain.
+- \`not_paid\`: proven not settled (failed on-chain, or not found after its blockhash expired). The
+  next call pays again with a new quote.
+- Error \`PAYMENT_STATUS_UNKNOWN\`: the outcome could not be determined (RPC unavailable, or the
+  transaction not found while its blockhash is still valid, about a minute or two after signing).
+  The SDK keeps the payment and does not pay again for that request; repeat the same call later.
+
+Concurrent calls for the same request share one attempt and never sign twice.
+
+Pending payments live in memory only. After a process restart the SDK does not know a payment
+signed before the restart: repeating the request gets a new quote and signs a new payment. Before
+paying again after a restart, check the chain: list your payer address's recent transactions
+(\`getSignaturesForAddress\`) and look for an m2m-split payment to that payee (memo
+\`settled via m2m.monster <quote id>\`) since before the restart.
+
+### Without the SDK
+
+A signed payment is valid once and unlocks the resource once. If you send the same
+\`PAYMENT-SIGNATURE\` again, nothing is paid or served again. The seller answers \`402\` with:
+
+- body \`{"error":{"code":"QUOTE_EXPIRED","message":"This payment was already used."}}\`
+- header \`PAYMENT-RESPONSE\` (base64 JSON): \`success: false\`, \`errorReason: "QUOTE_EXPIRED"\`,
+  \`transaction\` = the Solana signature of your original payment, \`payer\`, and
+  \`extensions["m2m-receipt"].info.receipt\` = the original signed receipt.
+
+\`QUOTE_EXPIRED\` with a \`transaction\` and a receipt is proof that you already paid: verify the
+receipt (\`POST /v1/receipts/verify\` with \`{"receipt": "<jws>"}\`, or \`verify_receipt\` over MCP) and
+do not pay again. \`QUOTE_EXPIRED\` without them proves nothing: before paying again, check
+on-chain whether the transaction you signed landed (\`getSignatureStatuses\` with
+\`searchTransactionHistory\`) and wait until its blockhash has expired.
 
 ${
   network === DEVNET
@@ -278,7 +367,7 @@ console.log(res.status, await res.json()); // 200 and the receipt in PAYMENT-RES
 }## Quote with curl
 
 \`\`\`sh
-curl -X POST ${base}/v1/quotes \\
+curl -X POST ${api}/v1/quotes \\
   -H 'content-type: application/json' \\
   -H 'idempotency-key: 6f1c2e8a-quote-1' \\
   -d '{"network":"${network}","mint":"${usdc}","amount":"100000","payee":"YOUR_WALLET"}'
@@ -287,7 +376,7 @@ curl -X POST ${base}/v1/quotes \\
 ## MCP
 
 \`\`\`json
-{ "mcpServers": { "m2m-monster": { "url": "${base}/mcp" } } }
+{ "mcpServers": { "m2m-monster": { "url": "${api}/mcp" } } }
 \`\`\`
 
 Tools: ${TOOLS.map(([id]) => `\`${id}\``).join(", ")}. Tools that move funds return unsigned transactions; sign them locally.
@@ -304,25 +393,51 @@ ${Object.keys(ERRORS)
 `;
 }
 
+/** Public repository's GitHub private vulnerability reporting: the only security contact (D45, D62). */
+export const SECURITY_REPORT_URL =
+  "https://github.com/m2mmonster/m2m-monster/security/advisories/new";
+const SECURITY_POLICY_URL = "https://github.com/m2mmonster/m2m-monster/security/policy";
+
+/** RFC 9116 security.txt, production only. No e-mail address (D62). Expires 180 days ahead. */
+export function securityTxt(base: string, now: number): string {
+  const expires = new Date(now + 180 * 24 * 60 * 60 * 1000);
+  expires.setUTCHours(0, 0, 0, 0);
+  return `Contact: ${SECURITY_REPORT_URL}
+Expires: ${expires.toISOString()}
+Preferred-Languages: en
+Canonical: ${base}/.well-known/security.txt
+Policy: ${SECURITY_POLICY_URL}
+`;
+}
+
 /** 64×64 icon for registries and catalogs. */
 export const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><rect width="64" height="64" rx="14" fill="#111"/><text x="32" y="41" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="22" font-weight="700" fill="#7CFFB2" text-anchor="middle">m2m</text></svg>`;
 
 export function registerPublicRoutes(app: OpenAPIHono, deps: AppDeps) {
   const base = deps.publicBaseUrl;
+  const api = deps.apiBaseUrl ?? base;
   app.get("/.well-known/mcp.json", (c) => {
     const ref = c.req.query("ref");
-    return c.json(mcpManifest(base, ref && isAddress(ref) ? ref : undefined));
+    return c.json(mcpManifest(base, ref && isAddress(ref) ? ref : undefined, api));
   });
-  app.get("/.well-known/agent-card.json", (c) => c.json(agentCard(base)));
-  app.get("/.well-known/x402.json", (c) => c.json(x402Info(base, deps.network)));
-  app.get("/capabilities.json", (c) => c.json(capabilities(base, deps.network)));
-  app.get("/terms.json", (c) => c.json(terms(base)));
+  app.get("/.well-known/agent-card.json", (c) => c.json(agentCard(base, api)));
+  app.get("/.well-known/x402.json", (c) => c.json(x402Info(deps.network, api)));
+  app.get("/capabilities.json", (c) => c.json(capabilities(base, deps.network, api)));
+  if (deps.network !== DEVNET) {
+    app.get("/.well-known/security.txt", (c) =>
+      c.text(securityTxt(base, deps.now()), 200, { "content-type": "text/plain; charset=utf-8" }),
+    );
+  }
+  app.get("/terms.json", (c) => c.json(terms(base, deps.network)));
+  app.get("/terms", (c) =>
+    c.text(termsPage(base, deps.network), 200, { "content-type": "text/plain; charset=utf-8" }),
+  );
   app.get("/discovery", (c) =>
     c.json({
       name: "m2m.monster",
       description: DESCRIPTION,
       network: deps.network,
-      links: { ...urls(base), ...(deps.network === DEVNET && { demo: `${base}/demo` }) },
+      links: { ...urls(base, api), ...(deps.network === DEVNET && { demo: `${base}/demo` }) },
     }),
   );
   app.get("/icon.svg", (c) =>
@@ -332,6 +447,8 @@ export function registerPublicRoutes(app: OpenAPIHono, deps: AppDeps) {
     }),
   );
   app.get("/llms.txt", (c) =>
-    c.text(agentDocs(base, deps.network), 200, { "content-type": "text/markdown; charset=utf-8" }),
+    c.text(agentDocs(base, deps.network, api), 200, {
+      "content-type": "text/markdown; charset=utf-8",
+    }),
   );
 }

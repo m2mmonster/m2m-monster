@@ -20,6 +20,8 @@ const STATUS: Record<ErrorCode, ContentfulStatusCode> = {
   TRANSACTION_FAILED: 400,
   RATE_LIMITED: 429,
   INTERNAL_ERROR: 500,
+  // Raised by the payer SDKs only; the API never returns it.
+  PAYMENT_STATUS_UNKNOWN: 500,
 };
 
 export const errorBody = (code: ErrorCode, message: string = ERRORS[code]) => ({

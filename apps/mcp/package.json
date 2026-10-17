@@ -1,6 +1,6 @@
 {
   "name": "@m2m-monster/mcp",
-  "version": "0.1.1",
+  "version": "1.1.0",
   "description": "m2m.monster MCP server (stdio): quote, build unsigned, verify and submit agent-to-agent payments over x402 on Solana.",
   "license": "Apache-2.0",
   "keywords": [
@@ -11,7 +11,7 @@
     "payments",
     "agents"
   ],
-  "homepage": "https://sandbox.m2m.monster/llms.txt",
+  "homepage": "https://m2m.monster/llms.txt",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/m2mmonster/m2m-monster.git",

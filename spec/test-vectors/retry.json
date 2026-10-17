@@ -1,0 +1,195 @@
+{
+  "description": "Payer retry decision (D66): what a seller's answer and the chain mean for a payment the payer already signed. 'unknown' means the SDK raises PAYMENT_STATUS_UNKNOWN, keeps the payment and never pays again. Both SDKs must return 'expected' for every case.",
+  "cases": [
+    {
+      "name": "settled in this response",
+      "evidence": {
+        "settlement": "success",
+        "receipt": null,
+        "signature_status": null,
+        "blockhash_expired": null
+      },
+      "expected": "paid"
+    },
+    {
+      "name": "replay: QUOTE_EXPIRED with a verified receipt",
+      "evidence": {
+        "settlement": "quote_expired_with_receipt",
+        "receipt": "valid",
+        "signature_status": null,
+        "blockhash_expired": null
+      },
+      "expected": "already_paid"
+    },
+    {
+      "name": "receipt fails verification but the transaction is confirmed",
+      "evidence": {
+        "settlement": "quote_expired_with_receipt",
+        "receipt": "invalid",
+        "signature_status": "confirmed",
+        "blockhash_expired": false
+      },
+      "expected": "already_paid"
+    },
+    {
+      "name": "receipt fails verification, not found and blockhash expired",
+      "evidence": {
+        "settlement": "quote_expired_with_receipt",
+        "receipt": "invalid",
+        "signature_status": "not_found",
+        "blockhash_expired": true
+      },
+      "expected": "not_paid"
+    },
+    {
+      "name": "receipt fails verification, not found and blockhash still valid",
+      "evidence": {
+        "settlement": "quote_expired_with_receipt",
+        "receipt": "invalid",
+        "signature_status": "not_found",
+        "blockhash_expired": false
+      },
+      "expected": "unknown"
+    },
+    {
+      "name": "QUOTE_EXPIRED without receipt, confirmed on-chain",
+      "evidence": {
+        "settlement": "quote_expired_without_receipt",
+        "receipt": null,
+        "signature_status": "confirmed",
+        "blockhash_expired": false
+      },
+      "expected": "already_paid"
+    },
+    {
+      "name": "QUOTE_EXPIRED without receipt, finalized on-chain",
+      "evidence": {
+        "settlement": "quote_expired_without_receipt",
+        "receipt": null,
+        "signature_status": "finalized",
+        "blockhash_expired": true
+      },
+      "expected": "already_paid"
+    },
+    {
+      "name": "confirmed on-chain even if the block height could not be read",
+      "evidence": {
+        "settlement": "quote_expired_without_receipt",
+        "receipt": null,
+        "signature_status": "confirmed",
+        "blockhash_expired": "rpc_error"
+      },
+      "expected": "already_paid"
+    },
+    {
+      "name": "QUOTE_EXPIRED without receipt, not found and blockhash expired",
+      "evidence": {
+        "settlement": "quote_expired_without_receipt",
+        "receipt": null,
+        "signature_status": "not_found",
+        "blockhash_expired": true
+      },
+      "expected": "not_paid"
+    },
+    {
+      "name": "QUOTE_EXPIRED without receipt, not found and blockhash still valid",
+      "evidence": {
+        "settlement": "quote_expired_without_receipt",
+        "receipt": null,
+        "signature_status": "not_found",
+        "blockhash_expired": false
+      },
+      "expected": "unknown"
+    },
+    {
+      "name": "processed but not confirmed, blockhash still valid",
+      "evidence": {
+        "settlement": "quote_expired_without_receipt",
+        "receipt": null,
+        "signature_status": "processed",
+        "blockhash_expired": false
+      },
+      "expected": "unknown"
+    },
+    {
+      "name": "processed but not confirmed, blockhash expired",
+      "evidence": {
+        "settlement": "quote_expired_without_receipt",
+        "receipt": null,
+        "signature_status": "processed",
+        "blockhash_expired": true
+      },
+      "expected": "unknown"
+    },
+    {
+      "name": "failed on-chain: no tokens moved and it can never execute again",
+      "evidence": {
+        "settlement": "quote_expired_without_receipt",
+        "receipt": null,
+        "signature_status": "failed",
+        "blockhash_expired": false
+      },
+      "expected": "not_paid"
+    },
+    {
+      "name": "RPC down for the signature status",
+      "evidence": {
+        "settlement": "quote_expired_without_receipt",
+        "receipt": null,
+        "signature_status": "rpc_error",
+        "blockhash_expired": true
+      },
+      "expected": "unknown"
+    },
+    {
+      "name": "RPC down for the block height, not found",
+      "evidence": {
+        "settlement": "quote_expired_without_receipt",
+        "receipt": null,
+        "signature_status": "not_found",
+        "blockhash_expired": "rpc_error"
+      },
+      "expected": "unknown"
+    },
+    {
+      "name": "RPC down entirely",
+      "evidence": {
+        "settlement": "other",
+        "receipt": null,
+        "signature_status": "rpc_error",
+        "blockhash_expired": "rpc_error"
+      },
+      "expected": "unknown"
+    },
+    {
+      "name": "other answer (e.g. 500 or another error), confirmed on-chain",
+      "evidence": {
+        "settlement": "other",
+        "receipt": null,
+        "signature_status": "confirmed",
+        "blockhash_expired": false
+      },
+      "expected": "already_paid"
+    },
+    {
+      "name": "other answer, not found and blockhash expired",
+      "evidence": {
+        "settlement": "other",
+        "receipt": null,
+        "signature_status": "not_found",
+        "blockhash_expired": true
+      },
+      "expected": "not_paid"
+    },
+    {
+      "name": "other answer, not found and blockhash still valid",
+      "evidence": {
+        "settlement": "other",
+        "receipt": null,
+        "signature_status": "not_found",
+        "blockhash_expired": false
+      },
+      "expected": "unknown"
+    }
+  ]
+}

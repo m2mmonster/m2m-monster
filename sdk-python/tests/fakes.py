@@ -32,12 +32,19 @@ class FakeRpc(Rpc):
         self.sent: list[str] = []
         self.simulated: list[dict] = []
         self.transactions: dict[str, dict] = {}
+        self.block_height = 10
+        self.finalized_slot = 1
+        self.status_slot = 1
+        self.failing: set[str] = set()
+        self.statuses: dict[str, dict | None] = {}
 
     def put_token(self, owner: str, mint: str, amount: int) -> None:
         data = bytes(32) + bytes(32) + amount.to_bytes(8, "little") + bytes(93)
         self.accounts[associated_token_account(owner, mint)] = (TOKEN_PROGRAM, data)
 
     def call(self, method: str, params: list):
+        if method in self.failing:
+            raise RuntimeError(f"{method}: RPC unavailable")
         if method == "getAccountInfo":
             acc = self.accounts.get(params[0])
             value = (
@@ -65,17 +72,23 @@ class FakeRpc(Rpc):
                 self.sent.append(wire)
             self.transactions[sig] = {"wire": wire, "err": None}
             return sig
+        if method == "getEpochInfo":
+            return {"absoluteSlot": self.finalized_slot, "blockHeight": self.block_height}
         if method == "getSignatureStatuses":
+            # params: [[signatures], optional config]
             return {
+                "context": {"slot": self.status_slot},
                 "value": [
-                    {"err": None, "confirmationStatus": "confirmed"}
+                    self.statuses[s]
+                    if s in self.statuses
+                    else {"err": None, "confirmationStatus": "confirmed"}
                     if s in self.transactions
                     else None
                     for s in params[0]
-                ]
+                ],
             }
         if method == "getBlockHeight":
-            return 10
+            return self.block_height
         if method == "getTransaction":
             tx = self.transactions.get(params[0])
             if not tx:

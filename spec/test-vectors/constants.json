@@ -30,6 +30,7 @@
   "networks": {
     "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": {
       "name": "solana-mainnet",
+      "treasury": "D68nkVrQD3pcs6qNcadXqWvoKqsNCKpLemy3zYVmGHym",
       "usdc": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
       "mints": [
         {
@@ -71,6 +72,7 @@
     "UNAUTHORIZED": "Missing or invalid api_key.",
     "CHALLENGE_INVALID": "The registration challenge is missing, expired, already used, or not signed by this public key.",
     "IDEMPOTENCY_KEY_REUSED": "The idempotency key was already used for a different request.",
-    "INTERNAL_ERROR": "Internal error. Retry later."
+    "INTERNAL_ERROR": "Internal error. Retry later.",
+    "PAYMENT_STATUS_UNKNOWN": "The status of a signed payment could not be determined. Do not pay again; retry later."
   }
 }

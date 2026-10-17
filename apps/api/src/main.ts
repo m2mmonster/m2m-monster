@@ -7,6 +7,24 @@ import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { connectPostgres } from "./db.js";
 import { memoryKv, redisKv } from "./kv.js";
+import {
+  defaultPreflightDeps,
+  gateClosed,
+  PREFLIGHT_EXIT_DELAY_SECONDS,
+  refuseWithPreflight,
+} from "./preflight.js";
+import { checkUsdcDecimals } from "./startup.js";
+
+// Mainnet gate closed (rule 11, D71): read-only preflight, then exit without opening the port.
+if (gateClosed(process.env)) {
+  await refuseWithPreflight(process.env, {
+    log: (line) => console.log(line),
+    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    exit: (code) => process.exit(code),
+    deps: defaultPreflightDeps,
+    delaySeconds: PREFLIGHT_EXIT_DELAY_SECONDS,
+  });
+}
 
 const config = await loadConfig();
 const rpc = createSolanaRpc(config.rpcUrl);
@@ -22,6 +40,8 @@ const mintDecimals = (mint: string) => {
   }
   return cached;
 };
+
+await checkUsdcDecimals(config.network, mintDecimals);
 
 const clientIp = (c: Context) => {
   const forwarded = config.trustProxy ? c.req.header("x-forwarded-for") : undefined;
@@ -42,6 +62,7 @@ const app = createApp({
   mintDecimals,
   now: Date.now,
   publicBaseUrl: config.publicBaseUrl,
+  apiBaseUrl: config.apiBaseUrl,
   clientIp,
   limits: config.limits,
   trustProxy: config.trustProxy,

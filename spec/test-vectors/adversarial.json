@@ -1,0 +1,88 @@
+{
+  "description": "Adversarial m2m-split transactions signed by the payer (seed 1) against the expectation below; every one must be rejected with this exact code and reason. Amounts are strings of base units.",
+  "expectation": {
+    "network": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+    "payee": "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu",
+    "treasury": "DeQ2ZniNv2BiK746guCUz8tcxJ1HvmLW1e7EjjTiMFMj",
+    "paymentMint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+    "paymentDecimals": 6,
+    "usdcDecimals": 6,
+    "payeeAmount": "9975000",
+    "feeNet": "25000",
+    "receiptId": "q_adversarial"
+  },
+  "cases": [
+    {
+      "name": "fee to another treasury",
+      "transaction": "AdPwlVGJsqZDAoEhYJeZ+peYoecIxpIwJjHtDmsd/r/s0qSpMKePBtzCq4n6mCpZyqCqriVuHmBD9SsRXDg6IAOAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29ca4T+VAWZkKbqIwjcZYhVrZWKZR4UVyYj9/rTk9uwE+ztrxucFh9taYpGubB4CaShjb9TxDK2okvxsQiD/MsimO3GNuBAHinAmeonA4BlkebkC+7BCRUHAl27/m1jdh/iO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqcDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUFAAUCIE4AAAUACQMAAAAAAAAAAAcEAwQCAAoM2DSYAAAAAAAGBwQDBAEACgyoYQAAAAAAAAYGACVzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX2FkdmVyc2FyaWFsAA==",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 3: destination does not match the quote"
+    },
+    {
+      "name": "fee_net one unit lower",
+      "transaction": "AbeCslP5b9BMkFae97ytwep9DORfPTq4F3eIrRRec0fKVoc7//SOrROHU34hQFoez3Lr2W/DAUZeEM2f6vaKgQ6AAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cm/o0VuKTti3MclhER4E67yHQ8DkFMs0VQdWaeI30UNvtrxucFh9taYpGubB4CaShjb9TxDK2okvxsQiD/MsimO3GNuBAHinAmeonA4BlkebkC+7BCRUHAl27/m1jdh/iO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqcDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUFAAUCIE4AAAUACQMAAAAAAAAAAAcEAwQCAAoM2DSYAAAAAAAGBwQDBAEACgynYQAAAAAAAAYGACVzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX2FkdmVyc2FyaWFsAA==",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 3: amount does not match the quote"
+    },
+    {
+      "name": "net amount one unit lower",
+      "transaction": "AS82VjmrSZjc1m/V7Mt5aR0oNTdhKPCzGuB6XVqI7Xv3JkOMYpHvhm7V5swA80R4hvsJuVa9SuXWO8wHpcuF9QWAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cm/o0VuKTti3MclhER4E67yHQ8DkFMs0VQdWaeI30UNvtrxucFh9taYpGubB4CaShjb9TxDK2okvxsQiD/MsimO3GNuBAHinAmeonA4BlkebkC+7BCRUHAl27/m1jdh/iO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqcDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUFAAUCIE4AAAUACQMAAAAAAAAAAAcEAwQCAAoM1zSYAAAAAAAGBwQDBAEACgyoYQAAAAAAAAYGACVzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX2FkdmVyc2FyaWFsAA==",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 2: amount does not match the quote"
+    },
+    {
+      "name": "duplicated payment as sixth instruction",
+      "transaction": "AeyKbHBQ/0HAx3IP3SpBPDPcDnVypZcT16HIsvsB0M+WMUwFhLf3tPL3yWLZMgkuH9UsczuT0JkIK0Kr+VuW2geAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cm/o0VuKTti3MclhER4E67yHQ8DkFMs0VQdWaeI30UNvtrxucFh9taYpGubB4CaShjb9TxDK2okvxsQiD/MsimO3GNuBAHinAmeonA4BlkebkC+7BCRUHAl27/m1jdh/iO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqcDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wYFAAUCIE4AAAUACQMAAAAAAAAAAAcEAwQCAAoM2DSYAAAAAAAGBwQDBAEACgyoYQAAAAAAAAYGACVzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX2FkdmVyc2FyaWFsBwQDBAIACgzYNJgAAAAAAAYA",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "expected exactly 5 instructions"
+    },
+    {
+      "name": "memo replaced by a second fee transfer",
+      "transaction": "AQDcKiGxjZWknw6jIizUV8AfztDADyhNtmMu7eE4K7bMgNfDDBmLBDx+8rooPqjeqWJBWeLKuITEMLxrRH2PqAiAAQADB4qI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cm/o0VuKTti3MclhER4E67yHQ8DkFMs0VQdWaeI30UNvtrxucFh9taYpGubB4CaShjb9TxDK2okvxsQiD/MsimO3GNuBAHinAmeonA4BlkebkC+7BCRUHAl27/m1jdh/iO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqcDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpyV29u5s5tb9yxXaxLxIjPB/vcv+BhIj3ODTS8YLYlusFBQAFAiBOAAAFAAkDAAAAAAAAAAAGBAMEAgAKDNg0mAAAAAAABgYEAwQBAAoMqGEAAAAAAAAGBgQDBAEACgyoYQAAAAAAAAYA",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 4: memo does not match the quote"
+    },
+    {
+      "name": "Token-2022 program",
+      "transaction": "AYKKMreyo6vbAMYnHpWUMxMpErGRBmY99viLFfXRvk2vZ85Hhxco3Yi0ll1DRxY0kca+C3vrCj+ejCNoXBOy6QWAAQAFCYqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cm/o0VuKTti3MclhER4E67yHQ8DkFMs0VQdWaeI30UNvtrxucFh9taYpGubB4CaShjb9TxDK2okvxsQiD/MsimO3GNuBAHinAmeonA4BlkebkC+7BCRUHAl27/m1jdh/iO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqcDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkG3fbh7nWP3hhCXbzkbM3athr8TYO5DSf+vfko2KGL/MldvbubObW/csV2sS8SIzwf73L/gYSI9zg00vGC2JbrBQUABQIgTgAABQAJAwAAAAAAAAAACAQDBAIACgzYNJgAAAAAAAYHBAMEAQAKDKhhAAAAAAAABgYAJXNldHRsZWQgdmlhIG0ybS5tb25zdGVyIHFfYWR2ZXJzYXJpYWwA",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 2: expected a TransferChecked of the SPL Token program"
+    },
+    {
+      "name": "RequestHeapFrame instead of the limit",
+      "transaction": "AUHyIgQD/cARqFPuEg2HzID4hRRrlKVHXzmTuIS7WluE9YkTnak8r0ZZh4gJHdV4ADiNAe+rZLAiSqcPISV9ZgeAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cm/o0VuKTti3MclhER4E67yHQ8DkFMs0VQdWaeI30UNvtrxucFh9taYpGubB4CaShjb9TxDK2okvxsQiD/MsimO3GNuBAHinAmeonA4BlkebkC+7BCRUHAl27/m1jdh/iO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqcDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUFAAUBAAAEAAUACQMAAAAAAAAAAAcEAwQCAAoM2DSYAAAAAAAGBwQDBAEACgyoYQAAAAAAAAYGACVzZXR0bGVkIHZpYSBtMm0ubW9uc3RlciBxX2FkdmVyc2FyaWFsAA==",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 0: expected SetComputeUnitLimit"
+    },
+    {
+      "name": "trailing byte in instruction 0",
+      "transaction": "AUixNFZ76tmP1Hgu6eBwYMIlcpAFEAN/M72TEtPcb/tBLZuj+T006zRuR5D15WvwYhH1QP/8hMEg1gqwH8JUNQ+AAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cm/o0VuKTti3MclhER4E67yHQ8DkFMs0VQdWaeI30UNvtrxucFh9taYpGubB4CaShjb9TxDK2okvxsQiD/MsimO3GNuBAHinAmeonA4BlkebkC+7BCRUHAl27/m1jdh/iO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqcDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUFAAYCIE4AAAAFAAkDAAAAAAAAAAAHBAMEAgAKDNg0mAAAAAAABgcEAwQBAAoMqGEAAAAAAAAGBgAlc2V0dGxlZCB2aWEgbTJtLm1vbnN0ZXIgcV9hZHZlcnNhcmlhbAA=",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 0: expected SetComputeUnitLimit"
+    },
+    {
+      "name": "trailing byte in instruction 1",
+      "transaction": "AX13SSRITGHVFa9N+VCSAhe1njEN5Wqk2ewvSJPUsqwWRLUSAKLh0y3r1RCs40z6E1A4My71TV775tLzDw3xVQWAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cm/o0VuKTti3MclhER4E67yHQ8DkFMs0VQdWaeI30UNvtrxucFh9taYpGubB4CaShjb9TxDK2okvxsQiD/MsimO3GNuBAHinAmeonA4BlkebkC+7BCRUHAl27/m1jdh/iO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqcDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUFAAUCIE4AAAUACgMAAAAAAAAAAAAHBAMEAgAKDNg0mAAAAAAABgcEAwQBAAoMqGEAAAAAAAAGBgAlc2V0dGxlZCB2aWEgbTJtLm1vbnN0ZXIgcV9hZHZlcnNhcmlhbAA=",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 1: expected SetComputeUnitPrice"
+    },
+    {
+      "name": "trailing byte in instruction 2",
+      "transaction": "AaKfbIyMFrk1JKeFmgrPa445rVjwNwJjVnF22iM21wJ1mHGbphhrNebuv9WmmBpY6f9UoXoXV2jlshi2tTbDwAqAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cm/o0VuKTti3MclhER4E67yHQ8DkFMs0VQdWaeI30UNvtrxucFh9taYpGubB4CaShjb9TxDK2okvxsQiD/MsimO3GNuBAHinAmeonA4BlkebkC+7BCRUHAl27/m1jdh/iO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqcDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUFAAUCIE4AAAUACQMAAAAAAAAAAAcEAwQCAAsM2DSYAAAAAAAGAAcEAwQBAAoMqGEAAAAAAAAGBgAlc2V0dGxlZCB2aWEgbTJtLm1vbnN0ZXIgcV9hZHZlcnNhcmlhbAA=",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 2: expected a TransferChecked of the SPL Token program"
+    },
+    {
+      "name": "trailing byte in instruction 3",
+      "transaction": "AQ9aAj2f3ouhmKy4grRqNwYfl11VjD8J4ki4a5CZIc2Ag9FYl5TBfYenXC0ozHSH9mOGQNUi8c0n13rd9QN5MgWAAQAECIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cm/o0VuKTti3MclhER4E67yHQ8DkFMs0VQdWaeI30UNvtrxucFh9taYpGubB4CaShjb9TxDK2okvxsQiD/MsimO3GNuBAHinAmeonA4BlkebkC+7BCRUHAl27/m1jdh/iO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqcDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKnJXb27mzm1v3LFdrEvEiM8H+9y/4GEiPc4NNLxgtiW6wUFAAUCIE4AAAUACQMAAAAAAAAAAAcEAwQCAAoM2DSYAAAAAAAGBwQDBAEACwyoYQAAAAAAAAYABgAlc2V0dGxlZCB2aWEgbTJtLm1vbnN0ZXIgcV9hZHZlcnNhcmlhbAA=",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "instruction 3: expected a TransferChecked of the SPL Token program"
+    },
+    {
+      "name": "legacy transaction",
+      "transaction": "AdnG67yn+qhBUBUBjbAH/AFS+gAkGCNJNuEvxx3H3ZJveQsURvR6z7CkVaLUwTQOzbQ5dpVZuyznABdvTJixPgoBAAQIiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1yb+jRW4pO2LcxyWERHgTrvIdDwOQUyzRVB1Zp4jfRQ2+2vG5wWH21pika5sHgJpKGNv1PEMraiS/GxCIP8yyKY7cY24EAeKcCZ6icDgGWR5uQL7sEJFQcCXbv+bWN2H+I7RCyzkSFX8TqTPQE0KC0DK1/+zQGi2/G3eQYI3wAupwMGRm/lIRcy/+ytunLDm+e8jOW7xfcSayxDmzpAAAAABUpTWpkpIQZNJOhxYNo4fHw1td28kruB5B+oQEEFRI0G3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqcldvbubObW/csV2sS8SIzwf73L/gYSI9zg00vGC2JbrBQUABQIgTgAABQAJAwAAAAAAAAAABwQDBAIACgzYNJgAAAAAAAYHBAMEAQAKDKhhAAAAAAAABgYAJXNldHRsZWQgdmlhIG0ybS5tb25zdGVyIHFfYWR2ZXJzYXJpYWw=",
+      "code": "PAYMENT_TRANSACTION_INVALID",
+      "reason": "expected a version 0 transaction"
+    }
+  ]
+}

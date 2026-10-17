@@ -1175,7 +1175,7 @@ export interface components {
         Error: {
             error: {
                 /** @enum {string} */
-                code: "INVALID_REQUEST" | "PAYMENT_BELOW_MINIMUM" | "RECEIVER_TOKEN_ACCOUNT_MISSING" | "SIMULATION_FAILED" | "QUOTE_EXPIRED" | "QUOTE_INVALID" | "RATE_LIMITED" | "MINT_NOT_ALLOWED" | "FEE_BALANCE_INSUFFICIENT_USDC" | "PAYMENT_TRANSACTION_INVALID" | "TRANSACTION_FAILED" | "RECEIPT_INVALID" | "NOT_FOUND" | "UNAUTHORIZED" | "CHALLENGE_INVALID" | "IDEMPOTENCY_KEY_REUSED" | "INTERNAL_ERROR";
+                code: "INVALID_REQUEST" | "PAYMENT_BELOW_MINIMUM" | "RECEIVER_TOKEN_ACCOUNT_MISSING" | "SIMULATION_FAILED" | "QUOTE_EXPIRED" | "QUOTE_INVALID" | "RATE_LIMITED" | "MINT_NOT_ALLOWED" | "FEE_BALANCE_INSUFFICIENT_USDC" | "PAYMENT_TRANSACTION_INVALID" | "TRANSACTION_FAILED" | "RECEIPT_INVALID" | "NOT_FOUND" | "UNAUTHORIZED" | "CHALLENGE_INVALID" | "IDEMPOTENCY_KEY_REUSED" | "INTERNAL_ERROR" | "PAYMENT_STATUS_UNKNOWN";
                 message: string;
             };
         };
@@ -1201,6 +1201,8 @@ export interface components {
             /** @description Compact JWS (EdDSA) signed by the service key */
             receipt: string;
             receipt_data: components["schemas"]["ReceiptData"];
+            /** @description True when this settlement answers a repeated request (same idempotency key, or a payment already settled). A paywall must not serve the resource again for it. */
+            replayed?: boolean;
         };
         ReceiptData: {
             /** @enum {number} */

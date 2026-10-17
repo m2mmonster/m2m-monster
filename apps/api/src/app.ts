@@ -37,7 +37,10 @@ export interface AppDeps {
   mintDecimals: (mint: string) => Promise<number>;
   /** Milliseconds since the epoch. */
   now: () => number;
+  /** Public files and referral links (section C link format). */
   publicBaseUrl: string;
+  /** /v1 API, relay and /mcp; defaults to publicBaseUrl. */
+  apiBaseUrl?: string;
   clientIp: (c: Context) => string;
   limits: { ip: number; pubkey: number; apiKey: number };
   /** Behind one reverse proxy: trust the last X-Forwarded-For / X-Forwarded-Proto hop. */
@@ -78,6 +81,17 @@ export function externalRequest(c: Context, trustProxy: boolean | undefined): Re
   return new Request(url, c.req.raw);
 }
 
+/** The stable code of an `{ error: { code } }` response, if it is in the catalog. */
+async function errorCodeOf(res: Response): Promise<string | undefined> {
+  if (!res.headers.get("content-type")?.includes("application/json")) return undefined;
+  try {
+    const code = ((await res.clone().json()) as { error?: { code?: unknown } })?.error?.code;
+    return typeof code === "string" && Object.hasOwn(ERRORS, code) ? code : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export interface Helpers {
   sha256: (value: string) => string;
   /** Fixed one-minute window per key (section K, D17). */
@@ -91,7 +105,7 @@ export interface Helpers {
     idempotencyKey: string,
     request: string,
     compute: () => Promise<T>,
-  ) => Promise<T>;
+  ) => Promise<{ value: T; replayed: boolean }>;
 }
 
 export function createApp(deps: AppDeps) {
@@ -125,26 +139,31 @@ export function createApp(deps: AppDeps) {
       return parsed.result;
     };
     const previous = await stored();
-    if (previous !== undefined) return previous;
+    if (previous !== undefined) return { value: previous, replayed: true };
     const result = await compute();
     const saved = await deps.kv.setIfAbsent(
       key,
       JSON.stringify({ fingerprint, result }),
       IDEMPOTENCY_TTL,
     );
-    return saved ? result : ((await stored()) ?? result);
+    if (saved) return { value: result, replayed: false };
+    return { value: (await stored()) ?? result, replayed: true };
   };
 
-  // Minimal request log: no headers, api_key, IPs, query strings or bodies (D44).
+  // Minimal request log: no headers, api_key, IPs, query strings or bodies (D44). Error
+  // responses add their stable code, and only a code from the catalog.
   app.use("*", async (c, next) => {
     const started = performance.now();
     await next();
-    deps.log?.(
+    if (!deps.log) return;
+    const code = c.res.status >= 400 ? await errorCodeOf(c.res) : undefined;
+    deps.log(
       JSON.stringify({
         t: new Date(deps.now()).toISOString(),
         method: c.req.method,
         path: new URL(c.req.url).pathname,
         status: c.res.status,
+        ...(code && { code }),
         ms: Math.round(performance.now() - started),
       }),
     );
@@ -164,7 +183,7 @@ export function createApp(deps: AppDeps) {
     await next();
   });
 
-  app.openapi(quoteRoute, async (c) => {
+  app.openapi(quoteRoute(deps.network), async (c) => {
     const body = c.req.valid("json");
     const { "idempotency-key": idempotencyKey } = c.req.valid("header");
     if (body.network !== deps.network) {
@@ -175,7 +194,7 @@ export function createApp(deps: AppDeps) {
     // Discounts apply only when the payee itself asks for the quote (D33).
     const agent = await authenticatedAgent(deps, c);
     const payee = agent?.pubkey === body.payee ? agent : undefined;
-    const quote = await idempotent(
+    const { value: quote } = await idempotent(
       "quote",
       idempotencyKey,
       JSON.stringify([body.network, body.mint, body.amount, body.payee, payee?.pubkey ?? null]),
@@ -207,7 +226,7 @@ export function createApp(deps: AppDeps) {
   // caller's connection, so rate limits see the real client.
   app.all("/mcp", (c) =>
     mcpHttpHandler((apiKey) =>
-      createApiClient(deps.publicBaseUrl, {
+      createApiClient(deps.apiBaseUrl ?? deps.publicBaseUrl, {
         fetch: inProcessFetch(app, c),
         ...(apiKey && { apiKey }),
       }),
@@ -221,11 +240,11 @@ export function createApp(deps: AppDeps) {
     openapi: "3.1.0",
     info: {
       title: "m2m.monster API",
-      version: "1.0.0",
+      version: "1.1.0",
       description:
         "Non-custodial settlement for agent-to-agent payments over x402 with the m2m-split scheme on Solana. Every endpoint that moves funds returns unsigned transactions; agents sign locally.",
     },
-    servers: [{ url: deps.publicBaseUrl }],
+    servers: [{ url: deps.apiBaseUrl ?? deps.publicBaseUrl }],
   });
 
   return app;

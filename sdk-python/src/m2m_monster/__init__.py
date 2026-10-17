@@ -17,9 +17,10 @@ from .payment import (
 )
 from .quote import assert_quote_valid, price_split, split_expectation, verify_quote
 from .receipt import verify_receipt, verify_receipt_signature
+from .retry import decide_retry
 from .rpc import Rpc
 from .split import build_split_transaction, sign_transaction, verify_split_transaction
-from .x402 import PaymentClient, Paywall, PaywallOutcome, settlement_of
+from .x402 import PaymentClient, Paywall, PaywallOutcome, payment_outcome, settlement_of
 
 __all__ = [
     "DEVNET",
@@ -41,6 +42,8 @@ __all__ = [
     "prepare_payment",
     "prepare_refund",
     "price_split",
+    "decide_retry",
+    "payment_outcome",
     "settlement_of",
     "sign_transaction",
     "split_expectation",

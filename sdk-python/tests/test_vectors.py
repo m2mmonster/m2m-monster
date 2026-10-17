@@ -177,3 +177,36 @@ def test_constants_match_core():
     assert constants.M2M_SPLIT == c["x402"]["scheme"]
     assert constants.NETWORKS == c["networks"]
     assert c["errors"] == ERRORS
+
+
+ADVERSARIAL = load("adversarial.json")
+
+
+@pytest.mark.parametrize("case", ADVERSARIAL["cases"], ids=lambda c: c["name"])
+def test_adversarial_rejected_like_typescript(case):
+    e = ADVERSARIAL["expectation"]
+    expected = {
+        "network": e["network"],
+        "payee": e["payee"],
+        "treasury": e["treasury"],
+        "payment_mint": e["paymentMint"],
+        "payment_decimals": e["paymentDecimals"],
+        "usdc_decimals": e["usdcDecimals"],
+        "payee_amount": int(e["payeeAmount"]),
+        "fee_net": int(e["feeNet"]),
+        "receipt_id": e["receiptId"],
+    }
+    with pytest.raises(M2mError) as err:
+        verify_split_transaction(case["transaction"], expected, signed=True)
+    assert err.value.code == case["code"]
+    assert str(err.value) == case["reason"]
+
+
+RETRY = load("retry.json")
+
+
+@pytest.mark.parametrize("v", RETRY["cases"], ids=lambda v: v["name"])
+def test_retry_decision(v):
+    from m2m_monster.retry import decide_retry
+
+    assert decide_retry(v["evidence"]) == v["expected"]

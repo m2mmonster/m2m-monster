@@ -1,8 +1,18 @@
-import { DEVNET, NETWORKS } from "@m2m-monster/core";
+import { existsSync, readFileSync } from "node:fs";
+import { associatedTokenAccount, DEVNET, MAINNET, NETWORKS } from "@m2m-monster/core";
+import { address } from "@solana/kit";
 import { beforeEach, describe, expect, it } from "vitest";
-import { testApp } from "./test-app.js";
+import { terms, termsPage } from "./public.js";
+import { TERMS_TEXT } from "./terms-text.js";
+import { START, testApp } from "./test-app.js";
 
 const REF = "9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu";
+
+// docs/ stays in the private repository (D39). There the checks compare with the approved file;
+// in the public export they compare with the text generated from it.
+const TERMS_FILE = new URL("../../../docs/terms-en.md", import.meta.url);
+const approvedTerms = () =>
+  existsSync(TERMS_FILE) ? readFileSync(TERMS_FILE, "utf8").replace(/\r\n/g, "\n") : TERMS_TEXT;
 
 let app: Awaited<ReturnType<typeof testApp>>["app"];
 
@@ -25,6 +35,7 @@ const ALL = [
   "/pricing.json",
   "/capabilities.json",
   "/terms.json",
+  "/terms",
   "/status.json",
   "/discovery",
   "/v1/openapi.json",
@@ -100,6 +111,45 @@ describe("discoverability files (section B)", () => {
     expect(text).toMatch(/never sponsors|does not sponsor/i);
   });
 
+  it("terms.json on Devnet keeps the section J draft unchanged", async () => {
+    expect(await getJson("/terms.json")).toMatchObject({
+      version: 1,
+      status: "draft, pending legal review before mainnet",
+    });
+  });
+
+  it("production terms.json is the approved docs/terms-en.md, without a draft mark (D56)", () => {
+    const approved = approvedTerms();
+    const prod = terms("https://m2m.monster", MAINNET);
+    expect(prod).toEqual({
+      title: "TERMS AND CONDITIONS OF USE OF THE M2M.MONSTER INFRASTRUCTURE",
+      version: "2026-10-14",
+      last_updated: "2026-10-14",
+      language: "en",
+      text: approved,
+      pricing: "https://m2m.monster/pricing.json",
+    });
+    expect(prod).not.toHaveProperty("status");
+    expect(JSON.stringify(prod)).not.toMatch(/\bdraft\b|pending legal review/i);
+    expect(termsPage("https://m2m.monster", MAINNET)).toBe(approved);
+  });
+
+  it("/terms serves the content of terms.json as plain text (section J condition 6)", async () => {
+    const res = await get("/terms");
+    expect(res.headers.get("content-type")).toBe("text/plain; charset=utf-8");
+    const page = await res.text();
+    const json = (await getJson("/terms.json")) as unknown as {
+      status: string;
+      statement: string;
+      fee: string;
+      commitments: string[];
+      pricing: string;
+    };
+    for (const part of [json.status, json.statement, json.fee, json.pricing, ...json.commitments]) {
+      expect(page).toContain(part);
+    }
+  });
+
   it("status.json announces the API version", async () => {
     expect(await getJson("/status.json")).toMatchObject({ api_version: "v1", deprecations: [] });
   });
@@ -126,6 +176,18 @@ describe("discoverability files (section B)", () => {
     expect(text).toContain(NETWORKS[DEVNET].usdc);
   });
 
+  it("agent docs explain retries: the SDK never pays twice, and the raw QUOTE_EXPIRED proof", async () => {
+    const text = await (await get("/llms.txt")).text();
+    expect(text).toContain("## Retries: never pay twice");
+    expect(text).toContain("const outcome = paymentOutcome(res);");
+    expect(text).toContain("PAYMENT_STATUS_UNKNOWN");
+    expect(text).toContain("### Without the SDK");
+    expect(text).toContain('`errorReason: "QUOTE_EXPIRED"`');
+    expect(text).toContain("POST /v1/receipts/verify");
+    expect(text).toContain("Pending payments live in memory only.");
+    expect(text).toContain("getSignaturesForAddress");
+  });
+
   it("points to the Devnet demo resource", async () => {
     const text = await (await get("/llms.txt")).text();
     expect(text).toContain("## Try it on Devnet");
@@ -146,5 +208,136 @@ describe("discoverability files (section B)", () => {
       const text = await (await get(path)).text();
       expect(text, path).not.toMatch(/buy usdt|get usdt|purchase|exchange usdt|swap/i);
     }
+  });
+});
+
+describe("production deployment (m2m.monster and api.m2m.monster)", () => {
+  const TREASURY = NETWORKS[MAINNET].treasury as string;
+  const prodApp = async () =>
+    (
+      await testApp({
+        network: MAINNET,
+        treasury: TREASURY,
+        publicBaseUrl: "https://m2m.monster",
+        apiBaseUrl: "https://api.m2m.monster",
+      })
+    ).app;
+
+  it("points /v1 and /mcp to API_BASE_URL and keeps public files and referrals on PUBLIC_BASE_URL", async () => {
+    const prod = await prodApp();
+    const json = async (path: string) => (await prod.request(path)).json() as Promise<never>;
+    const mcp = (await json(`/.well-known/mcp.json?ref=${REF}`)) as Record<string, unknown>;
+    expect(mcp).toMatchObject({
+      websiteUrl: "https://m2m.monster",
+      remotes: [{ type: "streamable-http", url: "https://api.m2m.monster/mcp" }],
+      referral: { referred_by: REF },
+    });
+    const { links } = (await json("/discovery")) as { links: Record<string, string> };
+    expect(links).toMatchObject({
+      api: "https://api.m2m.monster/v1",
+      openapi: "https://api.m2m.monster/v1/openapi.json",
+      mcp: "https://api.m2m.monster/mcp",
+      mcp_manifest: "https://m2m.monster/.well-known/mcp.json",
+      pricing: "https://m2m.monster/pricing.json",
+      terms: "https://m2m.monster/terms.json",
+      terms_page: "https://m2m.monster/terms",
+    });
+    expect(links.demo).toBeUndefined();
+    const openapi = (await json("/v1/openapi.json")) as { servers: { url: string }[] };
+    expect(openapi.servers).toEqual([{ url: "https://api.m2m.monster" }]);
+    const x402 = (await json("/.well-known/x402.json")) as Record<string, string>;
+    expect(x402.quotes).toBe("https://api.m2m.monster/v1/quotes");
+    const docs = await (await prod.request("/llms.txt")).text();
+    expect(docs).toContain("curl -X POST https://api.m2m.monster/v1/quotes");
+    expect(docs).toContain('createApiClient("https://api.m2m.monster")');
+    expect(docs).not.toContain("Try it on Devnet");
+  });
+
+  it("publishes the mainnet treasury and exact mints from core, nothing written by hand", async () => {
+    expect(TREASURY).toBe("D68nkVrQD3pcs6qNcadXqWvoKqsNCKpLemy3zYVmGHym");
+    const prod = await prodApp();
+    const x402 = (await (await prod.request("/.well-known/x402.json")).json()) as {
+      schemes: { network: string; treasury: string; fee_asset: { mint: string } }[];
+    };
+    expect(x402.schemes[0]).toMatchObject({
+      network: MAINNET,
+      treasury: TREASURY,
+      fee_asset: { mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+    });
+    const pricing = (await (await prod.request("/pricing.json")).json()) as {
+      network: { id: string; tokens: { mint: string }[] };
+    };
+    expect(pricing.network.id).toBe(MAINNET);
+    expect(pricing.network.tokens.map((t) => t.mint)).toEqual([
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+    ]);
+    const docs = await (await prod.request("/llms.txt")).text();
+    expect(docs).toContain(`to the treasury \`${TREASURY}\``);
+    for (const path of ALL) {
+      const text = await (await prod.request(path)).text();
+      expect(text, path).not.toContain(NETWORKS[DEVNET].treasury as string);
+      expect(text, path).not.toContain(NETWORKS[DEVNET].usdc);
+    }
+  });
+
+  it("the OpenAPI examples come from the deployment's network (core)", async () => {
+    const example = async (app: Awaited<ReturnType<typeof prodApp>>) => {
+      const doc = (await (await app.request("/v1/openapi.json")).json()) as {
+        components: {
+          schemas: { QuoteRequest: { properties: Record<string, { example?: string }> } };
+        };
+      };
+      const { network, mint } = doc.components.schemas.QuoteRequest.properties;
+      return { network: network?.example, mint: mint?.example };
+    };
+    expect(await example(await prodApp())).toEqual({
+      network: MAINNET,
+      mint: NETWORKS[MAINNET].usdc,
+    });
+    expect(await example(app)).toEqual({ network: DEVNET, mint: NETWORKS[DEVNET].usdc });
+  });
+
+  it("the mainnet treasury's USDC account is the classic SPL Token ATA", async () => {
+    expect(await associatedTokenAccount(address(TREASURY), address(NETWORKS[MAINNET].usdc))).toBe(
+      "EWQ5w4DPmkinV4iHn9H7pcwx5Q8fYQCnY46CzGD1ErTk",
+    );
+  });
+
+  it("serves the approved terms on /terms and never http:// URLs", async () => {
+    const prod = await prodApp();
+    const approved = approvedTerms();
+    expect(await (await prod.request("/terms")).text()).toBe(approved);
+    for (const path of [...ALL, "/.well-known/security.txt"]) {
+      const res = await prod.request(path);
+      expect(res.status, path).toBe(200);
+      expect(await res.text(), path).not.toContain("http://");
+    }
+  });
+
+  it("serves security.txt with GitHub private reporting as the only contact (D45, D62)", async () => {
+    const res = await (await prodApp()).request("/.well-known/security.txt");
+    expect(res.headers.get("content-type")).toBe("text/plain; charset=utf-8");
+    const text = await res.text();
+    const fields = Object.fromEntries(
+      text
+        .trim()
+        .split("\n")
+        .map((line) => [line.slice(0, line.indexOf(":")), line.slice(line.indexOf(":") + 2)]),
+    );
+    expect(fields).toMatchObject({
+      Contact: "https://github.com/m2mmonster/m2m-monster/security/advisories/new",
+      Canonical: "https://m2m.monster/.well-known/security.txt",
+      "Preferred-Languages": "en",
+    });
+    expect(text.match(/^Contact:/gm)).toHaveLength(1);
+    expect(text).not.toMatch(/@|mailto/i);
+    const expires = Date.parse(fields.Expires as string);
+    expect(expires).toBeGreaterThan(START);
+    expect(expires - START).toBeLessThan(365 * 24 * 60 * 60 * 1000);
+  });
+
+  it("does not serve security.txt on the Devnet sandbox", async () => {
+    expect((await app.request("/.well-known/security.txt")).status).toBe(404);
   });
 });
